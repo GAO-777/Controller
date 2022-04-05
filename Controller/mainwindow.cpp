@@ -6,8 +6,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ConnectionBar = new ConnectionsBar();
-    ui->MVL->addWidget(ConnectionBar);
 }
 
 MainWindow::~MainWindow()
@@ -15,3 +13,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
+void MainWindow::on_AddConnection_pb_clicked()
+{
+    ControllerTab* newTab = new ControllerTab(this);
+    ui->Control_Connections_tw->addTab(newTab,"Controller Tab");
+}

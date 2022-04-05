@@ -233,15 +233,15 @@ void CommandList::load(QString openFileName)
 
 #include "ui_connectionsetup.h"
 
-ConnectionsBar *ParentSB;
+ConnectionsBar *ParentCB;
 
 ConnectionSetup::ConnectionSetup(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ConnectionSetup)
 {
     ui->setupUi(this);
-    ParentSB = static_cast<ConnectionsBar*>(parent);
-    ParentSB->SettingsConnection_pb->setEnabled(false);
+    ParentCB = static_cast<ConnectionsBar*>(parent);
+    ParentCB->SettingsConnection_pb->setEnabled(false);
     connect(ui->USB_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
     connect(ui->UDP_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
 
@@ -306,14 +306,16 @@ void ConnectionSetup::USB_page_ChangedDevice(int i)
 void ConnectionSetup::UpdateSetup()
 {
     if(ui->USB_ConnectionType_rb->isChecked()){
-        ParentSB->ConnectionInfo.connectionType = USB;
+        ParentCB->ConnectionInfo.connectionType = USB;
         if(USB_SN_cb->currentIndex()>=0){
-            ParentSB->ConnectionInfo.USB_SN = USB_DevInfo[USB_SN_cb->currentIndex()].SerialNumber;
+            ParentCB->ConnectionInfo.USB_SN = USB_DevInfo[USB_SN_cb->currentIndex()].SerialNumber;
         }
     }else if(ui->UDP_ConnectionType_rb->isChecked()){
-        ParentSB->ConnectionInfo.IP_addrress = IPaddress->text();
-        ParentSB->ConnectionInfo.Port = Port->value();
+        ParentCB->ConnectionInfo.connectionType = UDP;
+        ParentCB->ConnectionInfo.IP_addrress = IPaddress->text();
+        ParentCB->ConnectionInfo.Port = Port->value();
     }
+    ParentCB->SettingsChanged(ParentCB->ConnectionInfo);
 }
 
 void ConnectionSetup::init_Pages()
@@ -390,7 +392,7 @@ void ConnectionSetup::init_Pages()
 
 void ConnectionSetup::on_ApplyButton_clicked()
 {
-    ParentSB->SettingsConnection_pb->setEnabled(true);
+    ParentCB->SettingsConnection_pb->setEnabled(true);
     UpdateSetup();
     close();
 }
@@ -414,9 +416,11 @@ ConnectionsBar::ConnectionsBar(QWidget *parent)
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     QHBoxLayout *ConnectionsBarLayout = new QHBoxLayout(this);
-    NameConnection = new QLabel();
-    SettingsConnection_pb = new QPushButton("Setup",parent);
+    NameConnection          = new QLabel();
+    SettingsConnection_pb   = new QPushButton("Setup",parent);
     connect(SettingsConnection_pb,&QPushButton::clicked,this,&ConnectionsBar::callConnectionSetup);
+    openDevice_pb           = new QPushButton("Сonnect",parent);
+    connect(openDevice_pb,&QPushButton::clicked,this,&ConnectionsBar::openDevice);
 
     Status_l = new QLabel();
     Status_l->setFixedSize(15,15);
@@ -424,6 +428,7 @@ ConnectionsBar::ConnectionsBar(QWidget *parent)
     ConnectionsBarLayout->addWidget(Status_l,0,Qt::AlignLeft);
     ConnectionsBarLayout->addWidget(NameConnection,1,Qt::AlignLeft);
     ConnectionsBarLayout->addWidget(SettingsConnection_pb,3,Qt::AlignLeft);
+    ConnectionsBarLayout->addWidget(openDevice_pb,4,Qt::AlignLeft);
 }
 
 void ConnectionsBar::setStatus(bool status, QString name)
@@ -431,6 +436,7 @@ void ConnectionsBar::setStatus(bool status, QString name)
     if (status){
         Status_l->setStyleSheet("background-color: green;");
         NameConnection->setText(name);
+        SettingsConnection_pb->setEnabled(false);
     }
     else{
          Status_l->setStyleSheet("background-color: red;");
@@ -443,7 +449,11 @@ void ConnectionsBar::callConnectionSetup()
     ConnectionSetup* Setup = new ConnectionSetup(this);
     Setup->setWindowFlags(Qt::Window);
     Setup->show();
+}
 
+void ConnectionsBar::openDevice()
+{
+    emit OpenDevice();
 }
 
 

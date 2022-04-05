@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "tools.h"
-
+#include "controllertab.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -18,6 +18,9 @@ public:
     ~MainWindow();
 
     ConnectionsBar* ConnectionBar;
+
+private slots:
+    void on_AddConnection_pb_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -105,6 +105,11 @@ bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
     return Eth_Exchange_Status;
 }
 
+bool Ethernet_Interface::Bind()
+{
+    bind(Socket, (SOCKADDR *) &MServer, sizeof(MServer));
+}
+
 void WordToByte(int W, char *C)
 {
     int Data_msb,Data_lsb;

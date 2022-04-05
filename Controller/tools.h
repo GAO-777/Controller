@@ -154,13 +154,19 @@ public:
     explicit ConnectionsBar(QWidget *parent = nullptr);
     QWidget *ConnectionsBar_w;
     QPushButton* SettingsConnection_pb;
+    QPushButton* openDevice_pb;         // Испускает сигнал OpenDevice, чтобы родитель инициировал обмен данными
 
     // = = = = = Данные о выбранном соединении = = = = = //
-    Connection_Info ConnectionInfo; // Параметры соединения
-    QLabel*  Status_l;               // Cтатус соединения
+    Connection_Info ConnectionInfo;     // Параметры соединения
+    QLabel*  Status_l;                  // Cтатус соединения
     QLabel*  NameConnection;
     void setStatus(bool status, QString name);
-    void callConnectionSetup();
+    void callConnectionSetup();         // Вызывает окно настройки соединения
+    void openDevice();                  // Испускает сигнал OpenDevice
+
+signals:
+    void SettingsChanged(Connection_Info CI);
+    void OpenDevice();
 };
 
 

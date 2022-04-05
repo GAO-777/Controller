@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -11,6 +12,7 @@ CONFIG += c++11
 SOURCES += \
     USB_Interface.cpp \
     binp_device.cpp \
+    controllertab.cpp \
     ethernet_interface.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -19,12 +21,14 @@ SOURCES += \
 HEADERS += \
     USB_Interface.h \
     binp_device.h \
+    controllertab.h \
     ethernet_interface.h \
     mainwindow.h \
     tools.h
 
 FORMS += \
     connectionsetup.ui \
+    controllertab.ui \
     mainwindow.ui
 
 # Default rules for deployment.

@@ -21,6 +21,7 @@ public:
     void closeSocket();                               // закрывает сокет
     bool write(WORD *Addr, WORD *Data, int size);
     bool read(WORD *Addr, WORD *Data, int size);
+    bool Bind();
 
 public:
     std::string Message;        // Строка хранит сообщения об ошибках и т.п.
