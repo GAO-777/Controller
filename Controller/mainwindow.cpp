@@ -7,7 +7,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ConnectionBar = new ConnectionsBar();
-    ui->MVL->addWidget(ConnectionBar);
+    RW_Widget* RWidget = new RW_Widget();
+    ui->MVL->addWidget(RWidget);
 }
 
 MainWindow::~MainWindow()

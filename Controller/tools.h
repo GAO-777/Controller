@@ -16,6 +16,7 @@
 #include<QCloseEvent>
 #include<QSpinBox>
 #include <QValidator>
+#include <QMenu>
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ███████████████████████████───█─█─█─██─█────█───█───█────█─██─█───█████████████████████████████
@@ -70,6 +71,7 @@ public:
     QList<unsigned int>* Data;
 
     void createRow(int s);
+    void deleteRow();
     void updateQLists();    // Обновление списков: Items,Addr,Data
     void fill_Data(QList<unsigned int> *Items, unsigned int* InData);
     void fill_Data(QList<unsigned int> *Items, QList<unsigned int>* InData);
@@ -78,9 +80,18 @@ public:
     void clearList();
     void save(QString saveFileName);
     void load(QString openFileName);
-
+    void customContextMenuRequest(const QPoint &pos);
 };
 
+class RW_Widget : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit RW_Widget(QWidget *parent = nullptr);
+    CommandList* WriteList;
+    CommandList* ReadList;
+
+};
 
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████

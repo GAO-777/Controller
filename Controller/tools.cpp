@@ -46,8 +46,10 @@ CommandList::CommandList(QTableWidget *parent) :
     Items = new QList<unsigned int>();
     Addr = new QList<unsigned int>();
     Data = new QList<unsigned int>();
-    // = = = Выполняем заполнение QTableWidget записями с помощью цикла = = = //
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this,&CommandList::customContextMenuRequested, this, &CommandList::customContextMenuRequest);
 
+    // = = = Выполняем заполнение QTableWidget записями с помощью цикла = = = //
     setColumnCount(3);   // Указываем число колонок
     setShowGrid(true);   // Включаем сетку
     setHorizontalHeaderLabels(QStringList() << "" << " Address"<<"Data" );
@@ -88,6 +90,11 @@ void CommandList::createRow(int s)
     resizeColumnToContents(0);
 
     size = s;
+}
+
+void CommandList::deleteRow()
+{
+    this->removeRow(this->currentRow());
 }
 
 void CommandList::updateQLists()
@@ -219,6 +226,123 @@ void CommandList::load(QString openFileName)
     delete WriteList_Items;
     delete WriteList_Addr;
     delete WriteList_Data;
+}
+void CommandList::customContextMenuRequest(const QPoint &pos)
+{
+    QMenu* menu = new QMenu();
+    auto DeleteRow_Action = menu->addAction("Delete");
+    connect(DeleteRow_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            for(int p = range.bottomRow();p>=range.topRow();p--)
+                this->removeRow(p);
+        }
+    });
+
+    auto InsertRow_Action = menu->addAction("Insert");
+    connect(InsertRow_Action, &QAction::triggered, this, [this](){
+        int row_pos;
+        if(this->currentRow() == -1) row_pos = 0;
+        else row_pos = this->currentRow();
+        insertRow(row_pos);
+        // Создаём виджет, который будет содержать в себе чекбокс
+        QWidget *checkBoxWidget = new QWidget();
+        QCheckBox *checkBox = new QCheckBox();      // объявляем и инициализируем чекбокс
+        QHBoxLayout *layoutCheckBox = new QHBoxLayout(checkBoxWidget); // создаём слой с привязкой к виджету
+        layoutCheckBox->addWidget(checkBox);            // Устанавливаем чекбокс в слой
+        layoutCheckBox->setAlignment(Qt::AlignCenter);  // Отцентровываем чекбокс
+        layoutCheckBox->setContentsMargins(0,0,0,0);    // Устанавливаем нулевые отступы
+        checkBox->setChecked(true);
+        setCellWidget(row_pos,0, checkBoxWidget);
+        setItem(row_pos,1, new QTableWidgetItem("0"));
+        setItem(row_pos,2, new QTableWidgetItem("0"));
+        setRowHeight(row_pos,25);
+        setColumnWidth(row_pos,60);
+    });
+
+    auto Increment_Action = menu->addAction("Increment");
+    connect(Increment_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            int topValue =  this->item(range.topRow(),range.leftColumn())->text().toInt();
+            for(int p=range.topRow()+1;p<=range.bottomRow();p++)
+                this->item(p,range.leftColumn())->setText(QString::number(topValue+p));
+
+        }
+
+    });
+
+    auto Decrement_Action = menu->addAction("Decrement");
+    connect(Decrement_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            int topValue =  this->item(range.topRow(),range.leftColumn())->text().toInt();
+            for(int p=range.topRow()+1;p<=range.bottomRow();p++)
+                this->item(p,range.leftColumn())->setText(QString::number(topValue-p));
+
+        }
+
+    });
+
+    auto Clear_Action = menu->addAction("Clear");
+    connect(Clear_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            for(int p=range.topRow();p<=range.bottomRow();p++){
+                if(range.leftColumn()!=0)
+                    this->item(p,range.leftColumn())->setText(QString::number(0));
+                this->item(p,range.rightColumn())->setText(QString::number(0));
+            }
+        }
+
+    });
+
+    auto Disable_Action = menu->addAction("Disable");
+    connect(Disable_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            for(int p=range.topRow();p<=range.bottomRow();p++){
+                QWidget *item = (cellWidget(p,0));
+                QCheckBox *checkB = qobject_cast <QCheckBox*> (item->layout()->itemAt(0)->widget());
+                checkB->setChecked(false);
+            }
+        }
+
+    });
+
+    auto Enable_Action = menu->addAction("Enable");
+    connect(Enable_Action, &QAction::triggered, this, [this](){
+        QList<QTableWidgetSelectionRange> listRange = selectedRanges();
+        for(int i=0;i<listRange.size();i++){
+            auto range = listRange.at(i);
+            for(int p=range.topRow();p<=range.bottomRow();p++){
+                QWidget *item = (cellWidget(p,0));
+                QCheckBox *checkB = qobject_cast <QCheckBox*> (item->layout()->itemAt(0)->widget());
+                checkB->setChecked(true);
+            }
+        }
+
+    });
+
+
+    menu->exec(QCursor::pos());
+}
+
+
+RW_Widget::RW_Widget(QWidget *parent) :
+           QWidget(parent)
+{
+    QHBoxLayout *MHL = new QHBoxLayout(this);
+    WriteList   = new CommandList();
+    ReadList    = new CommandList();
+    MHL->addWidget(WriteList);
+    MHL->addWidget(ReadList);
+
 }
 
 /*===============================================================================================*\
@@ -445,6 +569,8 @@ void ConnectionsBar::callConnectionSetup()
     Setup->show();
 
 }
+
+
 
 
 
