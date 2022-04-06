@@ -6,6 +6,7 @@
 #include "ethernet_interface.h"
 #include "USB_Interface.h"
 #include <QUdpSocket>
+#include <QMessageBox>
 namespace Ui {
 class ControllerTab;
 }
@@ -18,15 +19,18 @@ public:
     explicit ControllerTab(QWidget *parent = nullptr);
     ~ControllerTab();
 
+    RW_Widget* RW_Lists;
     ConnectionsBar* ConnectionBar;
     Connection_Info ConnectionInfo;
 
-    Ethernet_Interface* Eth;
+    bool statusConnection;
+    Ethernet_Interface* Eth_Device;
     QUdpSocket* udpSocket;
-    USB_Interface*      USB;
+
+    USB_Interface*      USB_Device;
 
     void setConnectionSettings(Connection_Info CI);
-    void openDevice();
+    void connectDevice();
     void readPendingDatagrams();
 private:
     Ui::ControllerTab *ui;

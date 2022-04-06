@@ -31,9 +31,10 @@ WORD* QListToWord(QList<unsigned int>* InData);
 QList<unsigned int> WordToQList(WORD* InData, int size);
 
 enum ConnectionType{
-    NON = 0,
-    USB = 1,
-    UDP = 2
+    NONE        = 0,
+    USB         = 1,
+    UDP         = 2,
+    SlowLink    = 3
 };
 
 struct Connection_Info {
@@ -82,14 +83,37 @@ public:
     void load(QString openFileName);
     void customContextMenuRequest(const QPoint &pos);
 };
-
+/*===============================================================================================*\
+  ████████████████████████████████████████████████████████████████████████████████████████████████
+  ███████████████████████████────█─███─█─███─█───█────██────█───█───██████████████████████████████
+  ███████████████████████████─██─█─███─█─███─██─██─██──█─████─████─███████████████████████████████
+  ███████████████████████████────█─█─█─█─█─█─██─██─██──█─█──█───██─███████████████████████████████
+  ███████████████████████████─█─██─────█─────██─██─██──█─██─█─████─███████████████████████████████
+  ███████████████████████████─█─███─█─███─█─██───█────██────█───██─███████████████████████████████
+  ████████████████████████████████████████████████████████████████████████████████████████████████
+\*===============================================================================================*/
 class RW_Widget : public QWidget
 {
     Q_OBJECT
 public:
     explicit RW_Widget(QWidget *parent = nullptr);
-    CommandList* WriteList;
-    CommandList* ReadList;
+private:
+    // - - - Компоненты - - - //
+    QPushButton*    Save_pb;
+    QPushButton*    Load_pb;
+    QPushButton*    Clear_pb;
+    QPushButton*    CreateRows;
+    QSpinBox*       Num_Rows;
+    CommandList*    WriteList;
+    CommandList*    ReadList;
+    QPushButton*    Write_pb;
+    QPushButton*    Read_pb;
+public:
+    // - - - Методы - - - //
+    void    addRows();
+    void    clearRows();
+    void    saveListsData();
+    void    loadListsData();
 
 };
 
@@ -138,7 +162,10 @@ public:
     QWidget* UDP_page;
     QLineEdit*  IPaddress;
     QSpinBox*  Port;
-
+/*==========================================================================================*\
+- - - - - - - - - - - - - UDP PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
+    QWidget* SlowLink_page;
 
 private slots:
     void on_ApplyButton_clicked();

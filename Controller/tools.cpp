@@ -177,7 +177,7 @@ void CommandList::setDataToLoad(int size,QList<unsigned int>* Items,QList<unsign
 
 void CommandList::clearList()
 {
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < this->rowCount(); i++){
         // Забираем виджет из слоя и кастуем его в QCheckBox
         QWidget *item = (cellWidget(i,0));
         QCheckBox *checkB = qobject_cast <QCheckBox*> (item->layout()->itemAt(0)->widget());
@@ -266,10 +266,12 @@ void CommandList::customContextMenuRequest(const QPoint &pos)
         QList<QTableWidgetSelectionRange> listRange = selectedRanges();
         for(int i=0;i<listRange.size();i++){
             auto range = listRange.at(i);
-            int topValue =  this->item(range.topRow(),range.leftColumn())->text().toInt();
-            for(int p=range.topRow()+1;p<=range.bottomRow();p++)
-                this->item(p,range.leftColumn())->setText(QString::number(topValue+p));
-
+            int topValueleft =  this->item(range.topRow(),range.leftColumn())->text().toInt();
+            int topValueRight =  this->item(range.topRow(),range.rightColumn())->text().toInt();
+            for(int p=range.topRow()+1;p<=range.bottomRow();p++){
+                this->item(p,range.leftColumn())->setText(QString::number(topValueleft+p));
+                this->item(p,range.rightColumn())->setText(QString::number(topValueRight+p));
+            }
         }
 
     });
@@ -279,10 +281,12 @@ void CommandList::customContextMenuRequest(const QPoint &pos)
         QList<QTableWidgetSelectionRange> listRange = selectedRanges();
         for(int i=0;i<listRange.size();i++){
             auto range = listRange.at(i);
-            int topValue =  this->item(range.topRow(),range.leftColumn())->text().toInt();
-            for(int p=range.topRow()+1;p<=range.bottomRow();p++)
-                this->item(p,range.leftColumn())->setText(QString::number(topValue-p));
-
+            int topValueleft =  this->item(range.topRow(),range.leftColumn())->text().toInt();
+            int topValueRight =  this->item(range.topRow(),range.rightColumn())->text().toInt();
+            for(int p=range.topRow()+1;p<=range.bottomRow();p++){
+                this->item(p,range.leftColumn())->setText(QString::number(topValueleft-p));
+                this->item(p,range.rightColumn())->setText(QString::number(topValueRight-p));
+            }
         }
 
     });
@@ -329,22 +333,104 @@ void CommandList::customContextMenuRequest(const QPoint &pos)
 
     });
 
-
     menu->exec(QCursor::pos());
 }
-
+/*===============================================================================================*\
+  ████████████████████████████████████████████████████████████████████████████████████████████████
+  ███████████████████████████────█─███─█─███─█───█────██────█───█───██████████████████████████████
+  ███████████████████████████─██─█─███─█─███─██─██─██──█─████─████─███████████████████████████████
+  ███████████████████████████────█─█─█─█─█─█─██─██─██──█─█──█───██─███████████████████████████████
+  ███████████████████████████─█─██─────█─────██─██─██──█─██─█─████─███████████████████████████████
+  ███████████████████████████─█─███─█─███─█─██───█────██────█───██─███████████████████████████████
+  ████████████████████████████████████████████████████████████████████████████████████████████████
+\*===============================================================================================*/
 
 RW_Widget::RW_Widget(QWidget *parent) :
            QWidget(parent)
 {
-    QHBoxLayout *MHL = new QHBoxLayout(this);
-    WriteList   = new CommandList();
-    ReadList    = new CommandList();
-    MHL->addWidget(WriteList);
-    MHL->addWidget(ReadList);
+    Save_pb = new QPushButton("Save");
+    connect(Save_pb,&QPushButton::clicked,this,&RW_Widget::saveListsData);
+    Load_pb = new QPushButton("Load");
+    connect(Load_pb,&QPushButton::clicked,this,&RW_Widget::loadListsData);
+    Clear_pb= new QPushButton("Clear all");
+    connect(Clear_pb,&QPushButton::clicked,this,&RW_Widget::clearRows);
+    // - - - Компановка - - - //
+    QHBoxLayout *THL = new QHBoxLayout();
+    QSpacerItem* rightSpaserTH = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    THL->addSpacerItem(rightSpaserTH);
+    THL->addWidget(Save_pb);
+    THL->addWidget(Load_pb);
+    THL->addWidget(Clear_pb);
+    QSpacerItem* leftSpaserTH = new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    THL->addSpacerItem(leftSpaserTH);
 
+    CreateRows = new QPushButton("Add lines");
+    connect(CreateRows,&QPushButton::clicked,this,&RW_Widget::addRows);
+    Num_Rows = new QSpinBox();
+    Num_Rows->setMinimumWidth(50);
+    Num_Rows->setMaximum(100);
+    // - - - Компановка - - - //
+    QHBoxLayout *ADL = new QHBoxLayout();
+    ADL->addSpacerItem(new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum));
+    ADL->addWidget(CreateRows);
+    ADL->addWidget(Num_Rows);
+    ADL->addSpacerItem(new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum));
+
+
+    QHBoxLayout *RW_HL = new QHBoxLayout();
+    WriteList   = new CommandList();
+    WriteList->Name = "WriteList";
+    ReadList    = new CommandList();
+    ReadList->Name = "ReadList";
+    RW_HL->addWidget(WriteList);
+    RW_HL->addWidget(ReadList);
+
+    Write_pb = new QPushButton("Write");
+    Read_pb  = new QPushButton("Read");
+    QHBoxLayout *RWbutton_HL = new QHBoxLayout();
+    RWbutton_HL->addWidget(Write_pb);
+    RWbutton_HL->addWidget(Read_pb);
+
+    QVBoxLayout *MVL = new QVBoxLayout();
+    MVL->insertLayout(0,THL,0);
+    MVL->insertLayout(1,ADL,0);
+    MVL->insertLayout(2,RW_HL,0);
+    MVL->insertLayout(3,RWbutton_HL,0);
+    this->setLayout(MVL);
 }
 
+void RW_Widget::addRows()
+{
+    int num_rows = Num_Rows->value();
+    WriteList->createRow(num_rows);
+    ReadList->createRow(num_rows);
+}
+
+void RW_Widget::clearRows()
+{
+    WriteList->clearList();
+    ReadList->clearList();
+}
+
+void RW_Widget::saveListsData()
+{
+    QString saveFileName = QFileDialog::getSaveFileName(this,
+                                                "Save file",
+                                                QDir::currentPath(),
+                                                "INI files (*.ini);;All files (*.*)");
+    WriteList->save(saveFileName);
+    ReadList->save(saveFileName);
+}
+
+void RW_Widget::loadListsData()
+{
+    QString openFileName = QFileDialog::getOpenFileName(this,
+                                                        "Open file",
+                                                        QDir::currentPath(),
+                                                        "INI files (*.ini);;All files (*.*)");
+   WriteList->load(openFileName);
+   ReadList->load(openFileName);
+}
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ████████████────█────█─██─█─██─█───█────█───█───█────█─██─█───█───█───█─█─█────████████████████
@@ -369,12 +455,14 @@ ConnectionSetup::ConnectionSetup(QWidget *parent) :
     connect(ui->USB_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
     connect(ui->UDP_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
 
-    USB_page = new QWidget(this);
-    UDP_page = new QWidget(this);
+    USB_page        = new QWidget(this);
+    UDP_page        = new QWidget(this);
+    SlowLink_page   = new QWidget(this);
     ui->MVL_Pages->addWidget(USB_page);
     ui->MVL_Pages->addWidget(UDP_page);
     USB_page->setVisible(false);
     UDP_page->setVisible(false);
+    SlowLink_page->setVisible(false);
 
     init_Pages();
 
@@ -389,10 +477,16 @@ void ConnectionSetup::PageSwitch()
 {
     if(ui->USB_ConnectionType_rb->isChecked()){
         UDP_page->setVisible(false);
+        SlowLink_page->setVisible(false);
         USB_page->setVisible(true);
     }else if(ui->UDP_ConnectionType_rb->isChecked()){
         UDP_page->setVisible(true);
         USB_page->setVisible(false);
+        SlowLink_page->setVisible(false);
+    }else if(ui->SlowLink_ConnectionType_rb->isChecked()){
+        UDP_page->setVisible(false);
+        USB_page->setVisible(false);
+        SlowLink_page->setVisible(true);
     }
 }
 
@@ -512,11 +606,16 @@ void ConnectionSetup::init_Pages()
     MVL_UDPpage->insertLayout(1,HL_Port,0);
 
     UDP_page->setLayout(MVL_UDPpage);
+
+/*==========================================================================================*\
+- - - - - - - - - - - - - Slow Link PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
 }
 
 void ConnectionSetup::on_ApplyButton_clicked()
 {
     ParentCB->SettingsConnection_pb->setEnabled(true);
+    ParentCB->openDevice_pb->setEnabled(true);
     UpdateSetup();
     close();
 }
@@ -549,10 +648,12 @@ ConnectionsBar::ConnectionsBar(QWidget *parent)
     Status_l = new QLabel();
     Status_l->setFixedSize(15,15);
     Status_l->setStyleSheet("background-color: red;");
-    ConnectionsBarLayout->addWidget(Status_l,0,Qt::AlignLeft);
-    ConnectionsBarLayout->addWidget(NameConnection,1,Qt::AlignLeft);
-    ConnectionsBarLayout->addWidget(SettingsConnection_pb,3,Qt::AlignLeft);
-    ConnectionsBarLayout->addWidget(openDevice_pb,4,Qt::AlignLeft);
+    ConnectionsBarLayout->addWidget(SettingsConnection_pb,0,Qt::AlignLeft);
+    ConnectionsBarLayout->addWidget(openDevice_pb,1,Qt::AlignLeft);
+    ConnectionsBarLayout->addWidget(Status_l,3,Qt::AlignLeft);
+    ConnectionsBarLayout->addWidget(NameConnection,4,Qt::AlignLeft);
+
+    ConnectionInfo.connectionType = NONE;
 }
 
 void ConnectionsBar::setStatus(bool status, QString name)
@@ -561,10 +662,13 @@ void ConnectionsBar::setStatus(bool status, QString name)
         Status_l->setStyleSheet("background-color: green;");
         NameConnection->setText(name);
         SettingsConnection_pb->setEnabled(false);
+        openDevice_pb->setText("Disconnect");
     }
     else{
          Status_l->setStyleSheet("background-color: red;");
-         NameConnection->setText(name);
+         NameConnection->setText("");
+         SettingsConnection_pb->setEnabled(true);
+         openDevice_pb->setText("Сonnect");
     }
 }
 
@@ -573,11 +677,16 @@ void ConnectionsBar::callConnectionSetup()
     ConnectionSetup* Setup = new ConnectionSetup(this);
     Setup->setWindowFlags(Qt::Window);
     Setup->show();
+    openDevice_pb->setEnabled(false);
+    SettingsConnection_pb->setEnabled(false);
 }
 
 void ConnectionsBar::openDevice()
 {
-    emit OpenDevice();
+    if(ConnectionInfo.connectionType == NONE)
+        callConnectionSetup();
+    else
+        emit OpenDevice();
 }
 
 

@@ -21,6 +21,7 @@ public:
 
 private slots:
     void on_AddConnection_pb_clicked();
+    void closeTab(int tab);
 
 private:
     Ui::MainWindow *ui;
