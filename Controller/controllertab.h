@@ -20,6 +20,7 @@ public:
     ~ControllerTab();
 
     RW_Widget* RW_Lists;
+    Console* Console;
     ConnectionsBar* ConnectionBar;
     Connection_Info ConnectionInfo;
 

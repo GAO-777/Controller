@@ -17,6 +17,9 @@
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <layout class="QVBoxLayout" name="MVL">
+      <property name="spacing">
+       <number>7</number>
+      </property>
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
         <property name="topMargin">
@@ -51,7 +54,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>

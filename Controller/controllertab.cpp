@@ -16,7 +16,12 @@ ControllerTab::ControllerTab(QWidget *parent) :
     RW_Lists = new RW_Widget();
     ui->MVL->addWidget(RW_Lists);
 
+    Console = new class Console();
+    ui->Console_vl->addWidget(Console);
+
     USB_Device = new USB_Interface();
+
+
 
     statusConnection = false;
 }

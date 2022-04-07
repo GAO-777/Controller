@@ -29,7 +29,19 @@ QList<unsigned int> WordToQList(WORD* InData, int size)
         OutData.append(InData[i]);
     return OutData;
 }
+/*===============================================================================================*\
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+  ██████████████████████████████────█────█─██─█───█────█─███───██████████████████████████████████
+  ██████████████████████████████─██─█─██─█──█─█─███─██─█─███─████████████████████████████████████
+  ██████████████████████████████─████─██─█─█──█───█─██─█─███───██████████████████████████████████
+  ██████████████████████████████─██─█─██─█─██─███─█─██─█─███─████████████████████████████████████
+  ██████████████████████████████────█────█─██─█───█────█───█───██████████████████████████████████
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+\*===============================================================================================*/
+Console::Console(QPlainTextEdit *parent) : QPlainTextEdit(parent)
+{
 
+}
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████
   ████████████────█────█─███─█─███─█────█─██─█────██─███───█───█───██████████████████
@@ -458,6 +470,7 @@ ConnectionSetup::ConnectionSetup(QWidget *parent) :
     USB_page        = new QWidget(this);
     UDP_page        = new QWidget(this);
     SlowLink_page   = new QWidget(this);
+
     ui->MVL_Pages->addWidget(USB_page);
     ui->MVL_Pages->addWidget(UDP_page);
     USB_page->setVisible(false);
@@ -557,13 +570,19 @@ void ConnectionSetup::init_Pages()
     USB_UpdateDeviceList_pb = new QPushButton("Обновить список устройств");
     connect(USB_UpdateDeviceList_pb,&QPushButton::clicked,this,&ConnectionSetup::UpdateDiviceList);
 
-    HL_Description->addWidget(new QLabel("Description: "),0,Qt::AlignLeft);
+    QLabel* Description_l =  new QLabel("Description: ");
+    Description_l->setFont(QFont("Segoe UI",11, QFont::Bold));
+    HL_Description->addWidget(Description_l,0,Qt::AlignLeft);
     HL_Description->addWidget(USB_Description_l,1,Qt::AlignLeft);
 
-    HL_ID->addWidget(new QLabel("ID:          "),0,Qt::AlignLeft);
+    QLabel* ID_l =  new QLabel("ID:          ");
+    ID_l->setFont(QFont("Segoe UI",11, QFont::Bold));
+    HL_ID->addWidget(ID_l,0,Qt::AlignLeft);
     HL_ID->addWidget(USB_ID_l,1,Qt::AlignLeft);
 
-    HL_LocId->addWidget(new QLabel("LocID:       "),0,Qt::AlignLeft);
+    QLabel* LocID_l =  new QLabel("LocID:       ");
+    LocID_l->setFont(QFont("Segoe UI",11, QFont::Bold));
+    HL_LocId->addWidget(LocID_l,0,Qt::AlignLeft);
     HL_LocId->addWidget(USB_LocId_l,1,Qt::AlignLeft);
 
     MVL_USBpage->addWidget(USB_SN_cb);
@@ -578,32 +597,39 @@ void ConnectionSetup::init_Pages()
 /*==========================================================================================*\
 - - - - - - - - - - - - - UDP PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \*==========================================================================================*/
-    QVBoxLayout* MVL_UDPpage = new QVBoxLayout();
-    QHBoxLayout* HL_IP = new QHBoxLayout();
-    QHBoxLayout* HL_Port = new QHBoxLayout();
+   // QVBoxLayout* MVL_UDPpage = new QVBoxLayout();
+    //QHBoxLayout* HL_IP = new QHBoxLayout();
+    //QHBoxLayout* HL_Port = new QHBoxLayout();
 
-
+    QGridLayout* MVL_UDPpage = new QGridLayout();
     IPaddress = new QLineEdit();
     QLabel* IP_label = new QLabel("IP address :");
-    IPaddress->setMinimumWidth(120);
-    IPaddress->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
-    IP_label->setFont(QFont("Segoe UI",11, QFont::Bold));
     IP_label->setAlignment(Qt::AlignRight);
-    HL_IP->addWidget(IP_label,0,Qt::AlignRight);
-    HL_IP->addWidget(IPaddress,0,Qt::AlignLeft);
+    IP_label->setMinimumSize(100,20);
+    IPaddress->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    IPaddress->setMinimumSize(100,20);
+
+    MVL_UDPpage->addWidget(IP_label,0,0,Qt::AlignRight);
+    MVL_UDPpage->addWidget(IPaddress,0,1,Qt::AlignLeft);
+   // HL_IP->addWidget(IP_label,0,Qt::AlignHCenter);
+   // HL_IP->addWidget(IPaddress,0,Qt::AlignHCenter);
+    //MVL_UDPpage->addWidget(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
 
     QLabel* Port_label = new QLabel("Port :");
-    Port_label->setFont(QFont("Segoe UI",11, QFont::Bold));
+    //Port_label->setFont(QFont("Segoe UI",11, QFont::Bold));
     Port_label->setAlignment(Qt::AlignRight);
     Port = new QSpinBox();
-    Port->setMinimumWidth(133);
-    Port->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    Port->setMinimumSize(100,20);
+    //Port->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     Port->setMaximum(900000);
-    HL_Port->addWidget(Port_label,0,Qt::AlignRight);
-    HL_Port->addWidget(Port,0,Qt::AlignLeft);
+    MVL_UDPpage->addWidget(Port_label,1,0,Qt::AlignRight);
+    MVL_UDPpage->addWidget(Port,1,1,Qt::AlignLeft);
+    //HL_Port->addWidget(Port_label,0,Qt::AlignRight);
+    //HL_Port->addWidget(Port,0,Qt::AlignLeft);
+    //HL_Port->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
 
-    MVL_UDPpage->insertLayout(0,HL_IP,0);
-    MVL_UDPpage->insertLayout(1,HL_Port,0);
+   // MVL_UDPpage->insertLayout(0,HL_IP,0);
+   // MVL_UDPpage->insertLayout(1,HL_Port,0);
 
     UDP_page->setLayout(MVL_UDPpage);
 
@@ -688,9 +714,4 @@ void ConnectionsBar::openDevice()
     else
         emit OpenDevice();
 }
-
-
-
-
-
 
