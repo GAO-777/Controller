@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setFont(QFont("Consolas",9, QFont::Normal));
+    //this->setFont(QFont("Consolas",9, QFont::Normal));
     connect(ui->Control_Connections_tw->tabBar(), &QTabBar::tabCloseRequested,this, &MainWindow::closeTab);
 
 }

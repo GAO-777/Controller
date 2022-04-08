@@ -35,10 +35,17 @@ bool Ethernet_Interface::init(string ipAddress, unsigned short port)
     return  true;
 }
 
-void Ethernet_Interface::closeSocket()
+bool Ethernet_Interface::closeSocket()
 {
-    closesocket(Socket);
-    WSACleanup();
+    if(closesocket(Socket) == 0){
+        WSACleanup();
+        return true;
+    }
+    else{
+        Message = WSAGetLastError();
+        return false;
+    }
+
 }
 
 bool Ethernet_Interface::Exchange(char *array, int array_len, int slen, DWORD timeout)
@@ -80,7 +87,6 @@ bool Ethernet_Interface::write(WORD *Addr, WORD *Data, int size)
 
 bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
 {
-    int Eth_Exchange_Status = 0;
     int slen,i;
     char *array;
     int array_len;
@@ -92,8 +98,9 @@ bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
     // заполняем посылку
     WordToByte(2,array); // вносим команду чтения
     for(i=0;i<size;i++)
-    {       WordToByte(Addr[i],(array+i*4+2));   // адрес
-            WordToByte(Data[i],(array+i*4+4));   // данные
+    {
+        WordToByte(Addr[i],(array+i*4+2));   // адрес
+        WordToByte(0,(array+i*4+4));   // данные
     }
 
     bool Exchange_Status = Exchange(array, array_len, slen, 200);
@@ -102,7 +109,7 @@ bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
         for(i=0;i<size;i++)
             Data[i] = (((WORD)array[i*4+4]<<8)&0xFF00)+(((WORD)array[i*4+5])&0xFF);
 
-    return Eth_Exchange_Status;
+    return Exchange_Status;
 }
 
 bool Ethernet_Interface::Bind()

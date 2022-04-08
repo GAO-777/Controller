@@ -23,16 +23,13 @@ public:
     Console* Console;
     ConnectionsBar* ConnectionBar;
     Connection_Info ConnectionInfo;
+    ConnectionManager* connectionManager;
 
-    bool statusConnection;
-    Ethernet_Interface* Eth_Device;
-    QUdpSocket* udpSocket;
-
-    USB_Interface*      USB_Device;
-
-    void setConnectionSettings(Connection_Info CI);
+    void setConnectionSettings(Connection_Info CI){connectionManager->ConnectionInfo = CI;};
     void connectDevice();
-    void readPendingDatagrams();
+    void write();
+    void read();
+
 private:
     Ui::ControllerTab *ui;
 };

@@ -18,7 +18,7 @@ class Ethernet_Interface
 public:
     Ethernet_Interface();
     bool init(string ipAddress, unsigned short port); // true -> успех, fasle -> проблема с подлючением (см. Message)
-    void closeSocket();                               // закрывает сокет
+    bool closeSocket();                               // закрывает сокет
     bool write(WORD *Addr, WORD *Data, int size);
     bool read(WORD *Addr, WORD *Data, int size);
     bool Bind();

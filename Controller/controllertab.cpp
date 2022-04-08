@@ -14,16 +14,17 @@ ControllerTab::ControllerTab(QWidget *parent) :
 
     // - - - RW_Widget - - - //
     RW_Lists = new RW_Widget();
+    RW_Lists->block();
+    connect(RW_Lists,&RW_Widget::write_pb_clicked,this,&ControllerTab::write);
+    connect(RW_Lists,&RW_Widget::read_pb_clicked,this,&ControllerTab::read);
     ui->MVL->addWidget(RW_Lists);
 
     Console = new class Console();
     ui->Console_vl->addWidget(Console);
 
-    USB_Device = new USB_Interface();
+    connectionManager = new ConnectionManager();
 
 
-
-    statusConnection = false;
 }
 
 ControllerTab::~ControllerTab()
@@ -31,63 +32,38 @@ ControllerTab::~ControllerTab()
     delete ui;
 }
 
-void ControllerTab::setConnectionSettings(Connection_Info CI)
-{
-    ConnectionInfo = CI;
-}
-
 void ControllerTab::connectDevice()
 {
-    /*
-    if(ConnectionInfo.connectionType == UDP){
-       // Eth = new Ethernet_Interface();
-       // bool EthStatus = false;
-       // EthStatus = Eth->init(ConnectionInfo.IP_addrress.toStdString().c_str(),ConnectionInfo.Port);
-       // if(EthStatus){
-         //   qDebug()<<EthStatus;
-       udpSocket = new QUdpSocket(this);
-            udpSocket->bind(QHostAddress::LocalHost, 7755);
-
-            connect(udpSocket, &QUdpSocket::readyRead,
-                    this, &ControllerTab::readPendingDatagrams);
-        }*/
-
-
-
-    if(ConnectionInfo.connectionType == USB){
-        if(statusConnection == false){
-            // - - - Подлючение - - - //
-            USB_Device->Select_Device(ConnectionInfo.USB_SN.toStdString().c_str());
-            statusConnection = USB_Device->Open_Device();
-            if(statusConnection == true){
-                ConnectionBar->setStatus(true,ConnectionInfo.USB_SN);
-            }else {
-                QMessageBox::critical(this,
-                                      ("Ошибка"),
-                                      ("Произошла ошибка при подлючении."));
-            }
-        }else{
-            // - - - Отключение - - - //
-            statusConnection = !USB_Device->Close_Device();
-            if(statusConnection == false){
-                ConnectionBar->setStatus(statusConnection,ConnectionInfo.USB_SN);
-            }else {
-                QMessageBox::critical(this,
-                                             ("Ошибка"),
-                                             ("Произошла ошибка при отключении устройства."));
-            }
-
-        }
-    }
+    connectionManager->connectDevice();
+    bool Status = connectionManager->statusConnection;
+    ConnectionBar->setStatus(Status,connectionManager->NameConnection);
+    if(Status)
+        RW_Lists->unblock();
+    else
+        RW_Lists->block();
 }
 
-void ControllerTab::readPendingDatagrams()
+void ControllerTab::write()
 {
-    qDebug()<<"Принял";
-    //while (udpSocket->hasPendingDatagrams()) {
-        //   QNetworkDatagram datagram = udpSocket->receiveDatagram();
-           //rocessTheDatagram(datagram);
-      // }
+    bool status = connectionManager->write(RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
+    if(status)
+        printSendData("UDP Write Button",RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
+   else
+        QMessageBox::critical(this,"Error",connectionManager->Message);
+}
+
+void ControllerTab::read()
+{
+    QList<unsigned int> *Data = new QList<unsigned int> ();
+
+    bool status = connectionManager->read(RW_Lists->getReadAddr(),Data);
+    if(status){
+        printSendData("UDP Read Button",RW_Lists->getReadAddr(),Data);
+        RW_Lists->fillReadList(Data);
+    }
+    else
+        QMessageBox::critical(this,"Error",connectionManager->Message);
+
 }
 
 

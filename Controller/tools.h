@@ -1,6 +1,7 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 #include <Windows.h>
+#include "ethernet_interface.h"
 #include "USB_Interface.h"
 #include <QTableWidget>
 #include <QCheckBox>
@@ -18,6 +19,7 @@
 #include <QValidator>
 #include <QMenu>
 #include <QPlainTextEdit>
+#include <QMessageBox>
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ███████████████████████████───█─█─█─██─█────█───█───█────█─██─█───█████████████████████████████
@@ -28,6 +30,8 @@
   ███████████████████████████████████████████████████████████████████████████████████████████████
 \*===============================================================================================*/
 WORD* QListToWord(QList<unsigned int>* InData);
+QList<unsigned int> WordToQList(WORD* InData, int size);
+void printSendData(QString str,QList<unsigned int>* Addr,QList<unsigned int>* Data);
 
 QList<unsigned int> WordToQList(WORD* InData, int size);
 
@@ -49,6 +53,8 @@ struct Connection_Info {
     QString IP_addrress;
     int Port;
 };
+
+
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ██████████████████████████████────█────█─██─█───█────█─███───██████████████████████████████████
@@ -135,7 +141,15 @@ public:
     void    clearRows();
     void    saveListsData();
     void    loadListsData();
-
+    QList<unsigned int>* getWriteAddr();    // Возвращает адреса, в которые нужно писать
+    QList<unsigned int>* getWriteData();    // Возвращает данные, в которые нужно записать
+    QList<unsigned int>* getReadAddr();     // Возвращает адреса, в которые нужно прочесть
+    void    fillReadList(QList<unsigned int>* data);
+    void    block();                        // Блокирует кнопочки от использования
+    void    unblock();                      // Разблокирует кнопочки от использования
+signals:
+    void    write_pb_clicked();
+    void    read_pb_clicked();
 };
 
 /*===============================================================================================*\
@@ -228,7 +242,35 @@ signals:
     void OpenDevice();
 };
 
+/*===============================================================================================*\
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+  █████████────█────█─██─█─██─█───█────█───█───█────█─██─█─███─█────█─██─█────█────█───█────█████
+  █████████─██─█─██─█──█─█──█─█─███─██─██─███─██─██─█──█─█──█──█─██─█──█─█─██─█─████─███─██─█████
+  █████████─████─██─█─█──█─█──█───█─█████─███─██─██─█─█──█─█─█─█────█─█──█────█─█──█───█────█████
+  █████████─██─█─██─█─██─█─██─█─███─██─██─███─██─██─█─██─█─███─█─██─█─██─█─██─█─██─█─███─█─██████
+  █████████────█────█─██─█─██─█───█────██─██───█────█─██─█─███─█─██─█─██─█─██─█────█───█─█─██████
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+\*===============================================================================================*/
+class ConnectionManager
+{
 
+public:
+    ConnectionManager();
+    ConnectionManager(Connection_Info CI);
+
+    Connection_Info ConnectionInfo;     // Информация о подлючении
+    QString NameConnection;
+    bool statusConnection;              // Статус текущего подлючения
+    QString Message;
+    Ethernet_Interface* Eth_Device;     // Ethernet соединение
+    USB_Interface*      USB_Device;     // USB соединение
+
+    void setConnectionSettings(Connection_Info CI){ ConnectionInfo = CI;}
+    bool connectDevice();
+    bool write(QList<unsigned int>* Addr,QList<unsigned int>* Data);
+    bool read(QList<unsigned int>* Addr,QList<unsigned int>* Data);
+
+};
 
 
 #endif // TOOLS_H

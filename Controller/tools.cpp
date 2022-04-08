@@ -29,6 +29,15 @@ QList<unsigned int> WordToQList(WORD* InData, int size)
         OutData.append(InData[i]);
     return OutData;
 }
+
+void printSendData(QString str, QList<unsigned int> *Addr, QList<unsigned int> *Data)
+{
+    qDebug()<<"============== "<<str<<"  "<<QTime::currentTime().toString("HH:mm:ss")<<" ==============";
+    for(int i=0;i<Addr->size();i++){
+        qDebug()<<QString( QString("[%1]<=[%2]")
+                           .arg(Addr->at(i)).arg(Data->at(i)));
+    }
+}
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ██████████████████████████████────█────█─██─█───█────█─███───██████████████████████████████████
@@ -40,6 +49,7 @@ QList<unsigned int> WordToQList(WORD* InData, int size)
 \*===============================================================================================*/
 Console::Console(QPlainTextEdit *parent) : QPlainTextEdit(parent)
 {
+    this->setFont(QFont("Consolas",9, QFont::Normal));
 
 }
 /*===============================================================================================*\
@@ -398,7 +408,10 @@ RW_Widget::RW_Widget(QWidget *parent) :
     RW_HL->addWidget(ReadList);
 
     Write_pb = new QPushButton("Write");
+    connect(Write_pb,&QPushButton::clicked,this,&RW_Widget::write_pb_clicked);
     Read_pb  = new QPushButton("Read");
+    connect(Read_pb,&QPushButton::clicked,this,&RW_Widget::read_pb_clicked);
+
     QHBoxLayout *RWbutton_HL = new QHBoxLayout();
     RWbutton_HL->addWidget(Write_pb);
     RWbutton_HL->addWidget(Read_pb);
@@ -442,6 +455,41 @@ void RW_Widget::loadListsData()
                                                         "INI files (*.ini);;All files (*.*)");
    WriteList->load(openFileName);
    ReadList->load(openFileName);
+}
+
+QList<unsigned int>* RW_Widget::getWriteAddr()
+{
+    WriteList->updateQLists();
+    return WriteList->Addr;
+}
+
+QList<unsigned int> *RW_Widget::getWriteData()
+{
+    WriteList->updateQLists();
+    return WriteList->Data;
+}
+
+QList<unsigned int> *RW_Widget::getReadAddr()
+{
+    ReadList->updateQLists();
+    return ReadList->Addr;
+}
+
+void RW_Widget::fillReadList(QList<unsigned int>* data)
+{
+    ReadList->fill_Data(ReadList->Items,data);
+}
+
+void RW_Widget::block()
+{
+    Write_pb->setEnabled(false);
+    Read_pb->setEnabled(false);
+}
+
+void RW_Widget::unblock()
+{
+    Write_pb->setEnabled(true);
+    Read_pb->setEnabled(true);
 }
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
@@ -608,6 +656,7 @@ void ConnectionSetup::init_Pages()
     IP_label->setMinimumSize(100,20);
     IPaddress->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     IPaddress->setMinimumSize(100,20);
+    IPaddress->setText("192.168.0.20");
 
     MVL_UDPpage->addWidget(IP_label,0,0,Qt::AlignRight);
     MVL_UDPpage->addWidget(IPaddress,0,1,Qt::AlignLeft);
@@ -622,6 +671,7 @@ void ConnectionSetup::init_Pages()
     Port->setMinimumSize(100,20);
     //Port->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     Port->setMaximum(900000);
+    Port->setValue(49320);
     MVL_UDPpage->addWidget(Port_label,1,0,Qt::AlignRight);
     MVL_UDPpage->addWidget(Port,1,1,Qt::AlignLeft);
     //HL_Port->addWidget(Port_label,0,Qt::AlignRight);
@@ -714,4 +764,119 @@ void ConnectionsBar::openDevice()
     else
         emit OpenDevice();
 }
+
+/*===============================================================================================*\
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+  █████████────█────█─██─█─██─█───█────█───█───█────█─██─█─███─█────█─██─█────█────█───█────█████
+  █████████─██─█─██─█──█─█──█─█─███─██─██─███─██─██─█──█─█──█──█─██─█──█─█─██─█─████─███─██─█████
+  █████████─████─██─█─█──█─█──█───█─█████─███─██─██─█─█──█─█─█─█────█─█──█────█─█──█───█────█████
+  █████████─██─█─██─█─██─█─██─█─███─██─██─███─██─██─█─██─█─███─█─██─█─██─█─██─█─██─█─███─█─██████
+  █████████────█────█─██─█─██─█───█────██─██───█────█─██─█─███─█─██─█─██─█─██─█────█───█─█─██████
+  ███████████████████████████████████████████████████████████████████████████████████████████████
+\*===============================================================================================*/
+ConnectionManager::ConnectionManager()
+{
+    // - - - Инициализация - - - //
+    NameConnection = "";
+    ConnectionInfo.connectionType = NONE;
+    statusConnection = false;
+    Eth_Device = new Ethernet_Interface();
+    USB_Device = new USB_Interface();
+}
+
+ConnectionManager::ConnectionManager(Connection_Info CI)
+{
+    // - - - Инициализация - - - //
+    NameConnection = "";
+    ConnectionInfo = CI;
+    statusConnection = false;
+    Eth_Device = new Ethernet_Interface();
+    USB_Device = new USB_Interface();
+}
+
+bool ConnectionManager::connectDevice()
+{
+    //34665
+    if(ConnectionInfo.connectionType == UDP){
+        if(statusConnection == false){
+            NameConnection = ConnectionInfo.IP_addrress;
+            statusConnection = Eth_Device->init(ConnectionInfo.IP_addrress.toStdString().c_str(),ConnectionInfo.Port);
+            if(!statusConnection){
+                Message = "Connection error! : "+QString::fromStdString(Eth_Device->Message);
+                return false;
+            }
+            return true;
+        }
+        if(statusConnection == true){
+            statusConnection = !Eth_Device->closeSocket();
+            if(!statusConnection){
+                Message = "Disconnection error! : "+QString::fromStdString(Eth_Device->Message);
+                return false;
+            }
+            return true;
+        }
+    }
+
+    if(ConnectionInfo.connectionType == USB){
+        if(statusConnection == false){
+            // - - - Подлючение - - - //
+            NameConnection = ConnectionInfo.USB_SN;
+            USB_Device->Select_Device(ConnectionInfo.USB_SN.toStdString().c_str());
+            statusConnection = USB_Device->Open_Device();
+            if(!statusConnection)
+                Message = "Connection error!";
+        }
+        if(statusConnection == true){
+            // - - - Отключение - - - //
+            statusConnection = !USB_Device->Close_Device();
+            if(!statusConnection)
+                Message = "Disconnection error!";
+        }
+
+    }
+}
+
+bool ConnectionManager::write(QList<unsigned int> *Addr, QList<unsigned int> *Data)
+{
+    if(Addr->size() == 0){
+        Message = "Address list is empty!";
+        return false;
+    }
+
+    if(ConnectionInfo.connectionType == UDP){
+        if(Addr->size() == Data->size()){
+            bool status;
+            status = Eth_Device->write(QListToWord(Addr),QListToWord(Data),Addr->size());
+            if(!status){
+                Message = "Sending error! : "+QString::fromStdString(Eth_Device->Message);
+                return false;
+            }
+        }else{
+            Message = "Addr->size() != Data->size()";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Data)
+{
+    if(Addr->size() == 0){
+        Message = "Address list is empty!";
+        return false;
+    }
+    WORD* OutData  = new WORD[Addr->size()];
+    if(ConnectionInfo.connectionType == UDP){
+            bool status;
+            status = Eth_Device->read(QListToWord(Addr),OutData,Addr->size());
+            if(!status){
+                Message = "Receive error! : "+QString::fromStdString(Eth_Device->Message);
+                return false;
+            }
+            *Data = WordToQList(OutData,Addr->size());
+    }
+    return true;
+
+}
+
 
