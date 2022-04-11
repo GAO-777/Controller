@@ -67,3 +67,15 @@ void ControllerTab::read()
 }
 
 
+
+void ControllerTab::on_pushButton_clicked()
+{
+    QString openFileName = QFileDialog::getOpenFileName(this,
+                                                        "Open file",
+                                                        QDir::currentPath(),
+                                                        "INI files (*.cl);;All files (*.*)");
+    QList<unsigned int>* Addr = new QList<unsigned int>();
+    QList<unsigned int>* Data = new QList<unsigned int>();
+    CLToQList(openFileName,Addr,Data);
+    connectionManager->read(Addr,Data);
+}

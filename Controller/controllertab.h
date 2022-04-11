@@ -27,6 +27,9 @@ public:
     void write();
     void read();
 
+private slots:
+    void on_pushButton_clicked();
+
 private:
     Ui::ControllerTab *ui;
 };

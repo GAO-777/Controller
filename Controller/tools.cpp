@@ -38,6 +38,69 @@ void printSendData(QString str, QList<unsigned int> *Addr, QList<unsigned int> *
                            .arg(Addr->at(i)).arg(Data->at(i)));
     }
 }
+
+bool CLToQList(QString openFileName,QList<unsigned int> *Addr, QList<unsigned int> *Data){
+    QStringList inputData;
+    QFile file(openFileName);
+
+    if ( (file.exists()) && (file.open(QIODevice::ReadOnly))){
+        while(!file.atEnd())
+            inputData << file.readLine();   // Отписываем все строки в массив
+        file.close();
+/*==========================================================================================*\
+- - - - - - - - - - - - - Расшивровка - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
+        // - - - пробегаем по массиву строк - - - //
+        QStringList::iterator i;
+        for (i = inputData.begin(); i != inputData.end(); ++i){
+            QString line = i->toStdString().c_str();
+            line.remove("\n");
+
+            if(line.indexOf("-") >= 0) continue;;
+
+            // - - - Запись - - - - - - - - - - - - - - - - - - - - - - - - //
+            if(line.indexOf("<=") > 0){
+                QStringList data = line.split("<=");
+
+                // - - - поиск адреса - - - - //
+                if(data[0].indexOf(":") > 0){
+                    int startAdd = data[0].split(":")[0].toInt();
+                    int endAdd = data[0].split(":")[1].toInt();
+                    for(int i=0;i<=endAdd-startAdd;i++)
+                        Addr->append(startAdd+i);
+                }else
+                    Addr->append(data[0].toInt());
+
+                // - - - поиск данных - - - - //
+                if(data[1].indexOf(":") > 0){
+                    int startData = data[1].split(":")[1].toInt();
+                    int endData = data[1].split(":")[1].toInt();
+                    for(int i=0;i<=endData-startData;i++)
+                        Data->append(startData+i);
+                }else
+                    Data->append(data[1].toInt());
+            }
+
+            // - - - Чтение - - - - - - - - - - - - - - - - - - - - - - - - //
+            if(line.indexOf("=>") > 0){
+                QStringList data = line.split("=>");
+
+                // - - - поиск адреса - - - - //
+                if(data[0].indexOf(":") > 0){
+                    int startAdd = data[0].split(":")[0].toInt();
+                    int endAdd = data[0].split(":")[1].toInt();
+                    for(int i=0;i<=endAdd-startAdd;i++)
+                        Addr->append(startAdd+i);
+                }else
+                    Addr->append(data[0].toInt());
+
+            }
+
+        }
+    }
+}
+
+
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ██████████████████████████████────█────█─██─█───█────█─███───██████████████████████████████████
@@ -825,7 +888,7 @@ bool ConnectionManager::connectDevice()
             NameConnection = ConnectionInfo.IP_addrress;
             statusConnection = Eth_Device->init(ConnectionInfo.IP_addrress.toStdString().c_str(),ConnectionInfo.Port);
             if(!statusConnection){
-                Message = "Connection error! : "+QString::fromStdString(Eth_Device->Message);
+                Message = "Connection error! : "+QString::number(Eth_Device->LastError);
                 return false;
             }
             return true;
@@ -833,7 +896,7 @@ bool ConnectionManager::connectDevice()
         if(statusConnection == true){
             statusConnection = !Eth_Device->closeSocket();
             if(!statusConnection){
-                Message = "Disconnection error! : "+QString::fromStdString(Eth_Device->Message);
+                Message = "Disconnection error! : "+QString::number(Eth_Device->LastError);
                 return false;
             }
             return true;
@@ -898,7 +961,7 @@ bool ConnectionManager::write(QList<unsigned int> *Addr, QList<unsigned int> *Da
             bool status;
             status = Eth_Device->write(QListToWord(Addr),QListToWord(Data),Addr->size());
             if(!status){
-                Message = "Sending error! : "+QString::fromStdString(Eth_Device->Message);
+                Message = "Sending error! : "+QString::number(Eth_Device->LastError);
                 return false;
             }
         }else{
@@ -912,7 +975,7 @@ bool ConnectionManager::write(QList<unsigned int> *Addr, QList<unsigned int> *Da
             bool status;
             status = MCHS->CLink_TxRx(ConnectionInfo.NumOfDownLink,202,Addr,Data);
             if(!status){
-                Message = "Sending error! : "+QString::fromStdString(Eth_Device->Message);
+                Message = "Sending error! : "+QString::number(Eth_Device->LastError);
                 return false;
             }
         }else{
@@ -937,7 +1000,7 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
             bool status;
             status = Eth_Device->read(QListToWord(Addr),OutData,Addr->size());
             if(!status){
-                Message = "Receive error! : "+QString::fromStdString(Eth_Device->Message);
+                Message = "Receive error! : "+QString::number(Eth_Device->LastError);
                 return false;
             }
             *Data = WordToQList(OutData,Addr->size());
@@ -952,13 +1015,12 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
             Data->append(OutData->at(i));
         }
         if(!status){
-            Message = "Receive error! : "+QString::fromStdString(Eth_Device->Message);
+            Message = "Receive error! : "+QString::number(Eth_Device->LastError);
             return false;
         }
     }
 
     return true;
-
 }
 
 

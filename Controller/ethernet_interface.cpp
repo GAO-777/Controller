@@ -2,7 +2,7 @@
 
 Ethernet_Interface::Ethernet_Interface()
 {
-    Message = "";
+    LastError = 0;
 }
 
 bool Ethernet_Interface::init(string ipAddress, unsigned short port)
@@ -10,20 +10,20 @@ bool Ethernet_Interface::init(string ipAddress, unsigned short port)
     /*
         Метод возвращает TRUE в случае, когда подлючение произошло успешно,
         возвращает FALSE в случае, когда при подлючении произошла ошибка.
-        Код ошибки можно посмотреть в строке Message.
+        Код ошибки можно посмотреть в LastError.
     */
 
     //Initialise winsock
     if (WSAStartup(MAKEWORD(2,2),&MWSA) != 0)
     {
-        Message = WSAGetLastError();
+        LastError = WSAGetLastError();
         return false;
     }
 
     //Create a socket    IPPROTO_IPV4    IPPROTO_UDP
     if((Socket = socket(AF_INET , SOCK_DGRAM , IPPROTO_UDP )) == INVALID_SOCKET)
     {
-        Message = WSAGetLastError();
+        LastError = WSAGetLastError();
         WSACleanup();
         return false;
     }
@@ -42,7 +42,7 @@ bool Ethernet_Interface::closeSocket()
         return true;
     }
     else{
-        Message = WSAGetLastError();
+        LastError = WSAGetLastError();
         return false;
     }
 
@@ -52,14 +52,14 @@ bool Ethernet_Interface::Exchange(char *array, int array_len, int slen, DWORD ti
 {
     if (sendto(Socket, array, array_len, 0, (struct sockaddr*) &MServer, slen) == SOCKET_ERROR)
     {
-        Message = WSAGetLastError();
+        LastError = WSAGetLastError();
         return false;
     }
 
     setsockopt(Socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(DWORD));
     if( recvfrom(Socket, array, array_len, 0, (struct sockaddr*) &MServer, &slen) == SOCKET_ERROR)
     {
-        Message = WSAGetLastError();
+        LastError = WSAGetLastError();
         return false;
     }
       return true;

@@ -39,8 +39,8 @@
 WORD* QListToWord(QList<unsigned int>* InData);
 QList<unsigned int> WordToQList(WORD* InData, int size);
 void printSendData(QString str,QList<unsigned int>* Addr,QList<unsigned int>* Data);
-
 QList<unsigned int> WordToQList(WORD* InData, int size);
+bool CLToQList(QString openFileName, QList<unsigned int> *Addr, QList<unsigned int> *Data);
 
 enum ConnectionType{
     NONE        = 0,
@@ -274,6 +274,7 @@ public:
     QString NameConnection;
     bool statusConnection;              // Статус текущего подлючения
     QString Message;
+    int Message_ex;
     Ethernet_Interface* Eth_Device;     // Ethernet соединение
     USB_Interface*      USB_Device;     // USB соединение
     MCHS_Imitator*      MCHS;           // Имитатор МЧС, который будет управять устройством

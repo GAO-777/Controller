@@ -24,7 +24,7 @@ public:
     bool Bind();
 
 public:
-    std::string Message;        // Строка хранит сообщения об ошибках и т.п.
+    int LastError;  // Хранит последний код ошибки
 protected:
     struct sockaddr_in MServer;
     WSADATA MWSA;
