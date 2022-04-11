@@ -47,7 +47,7 @@ void ControllerTab::write()
 {
     bool status = connectionManager->write(RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
     if(status)
-        printSendData("UDP Write Button",RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
+        printSendData("Write Button",RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
    else
         QMessageBox::critical(this,"Error",connectionManager->Message);
 }
@@ -58,7 +58,7 @@ void ControllerTab::read()
 
     bool status = connectionManager->read(RW_Lists->getReadAddr(),Data);
     if(status){
-        printSendData("UDP Read Button",RW_Lists->getReadAddr(),Data);
+        printSendData("Read Button",RW_Lists->getReadAddr(),Data);
         RW_Lists->fillReadList(Data);
     }
     else

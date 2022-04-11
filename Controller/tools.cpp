@@ -514,6 +514,7 @@ ConnectionSetup::ConnectionSetup(QWidget *parent) :
     ParentCB->SettingsConnection_pb->setEnabled(false);
     connect(ui->USB_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
     connect(ui->UDP_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
+    connect(ui->SlowLink_ConnectionType_rb,&QRadioButton::clicked,this,&ConnectionSetup::PageSwitch);
 
     USB_page        = new QWidget(this);
     UDP_page        = new QWidget(this);
@@ -521,6 +522,7 @@ ConnectionSetup::ConnectionSetup(QWidget *parent) :
 
     ui->MVL_Pages->addWidget(USB_page);
     ui->MVL_Pages->addWidget(UDP_page);
+    ui->MVL_Pages->addWidget(SlowLink_page);
     USB_page->setVisible(false);
     UDP_page->setVisible(false);
     SlowLink_page->setVisible(false);
@@ -538,16 +540,17 @@ void ConnectionSetup::PageSwitch()
 {
     if(ui->USB_ConnectionType_rb->isChecked()){
         UDP_page->setVisible(false);
-        SlowLink_page->setVisible(false);
         USB_page->setVisible(true);
+        NumOfDownLink_sp->setVisible(false);
+        Num_DL_label->setVisible(false);
     }else if(ui->UDP_ConnectionType_rb->isChecked()){
         UDP_page->setVisible(true);
         USB_page->setVisible(false);
-        SlowLink_page->setVisible(false);
     }else if(ui->SlowLink_ConnectionType_rb->isChecked()){
         UDP_page->setVisible(false);
-        USB_page->setVisible(false);
-        SlowLink_page->setVisible(true);
+        USB_page->setVisible(true);
+        NumOfDownLink_sp->setVisible(true);
+        Num_DL_label->setVisible(true);
     }
 }
 
@@ -594,6 +597,14 @@ void ConnectionSetup::UpdateSetup()
         ParentCB->ConnectionInfo.IP_addrress = IPaddress->text();
         ParentCB->ConnectionInfo.Port = Port->value();
     }
+    else if(ui->SlowLink_ConnectionType_rb->isChecked()){
+        ParentCB->ConnectionInfo.connectionType = SlowLink;
+        ParentCB->ConnectionInfo.NumOfDownLink = NumOfDownLink_sp->value();
+        if(USB_SN_cb->currentIndex()>=0){
+            ParentCB->ConnectionInfo.USB_SN = USB_DevInfo[USB_SN_cb->currentIndex()].SerialNumber;
+        }
+    }
+
     ParentCB->SettingsChanged(ParentCB->ConnectionInfo);
 }
 
@@ -686,6 +697,13 @@ void ConnectionSetup::init_Pages()
 /*==========================================================================================*\
 - - - - - - - - - - - - - Slow Link PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \*==========================================================================================*/
+    NumOfDownLink_sp = new QSpinBox();
+    Num_DL_label = new QLabel("Number Down Link :");
+
+    QHBoxLayout* SL_HL = new QHBoxLayout();
+    SL_HL->addWidget(Num_DL_label,0,Qt::AlignLeft);
+    SL_HL->addWidget(NumOfDownLink_sp,1,Qt::AlignLeft);
+    MVL_USBpage->insertLayout(0,SL_HL,0);
 }
 
 void ConnectionSetup::on_ApplyButton_clicked()
@@ -782,6 +800,7 @@ ConnectionManager::ConnectionManager()
     statusConnection = false;
     Eth_Device = new Ethernet_Interface();
     USB_Device = new USB_Interface();
+    MCHS = new MCHS_Imitator();
 }
 
 ConnectionManager::ConnectionManager(Connection_Info CI)
@@ -792,10 +811,14 @@ ConnectionManager::ConnectionManager(Connection_Info CI)
     statusConnection = false;
     Eth_Device = new Ethernet_Interface();
     USB_Device = new USB_Interface();
+    MCHS = new MCHS_Imitator();
 }
 
 bool ConnectionManager::connectDevice()
 {
+/*==========================================================================================*\
+- - - - - - - - - - - - - UDP PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
     //34665
     if(ConnectionInfo.connectionType == UDP){
         if(statusConnection == false){
@@ -816,7 +839,9 @@ bool ConnectionManager::connectDevice()
             return true;
         }
     }
-
+/*==========================================================================================*\
+- - - - - - - - - - - - - USB PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
     if(ConnectionInfo.connectionType == USB){
         if(statusConnection == false){
             // - - - Подлючение - - - //
@@ -832,7 +857,32 @@ bool ConnectionManager::connectDevice()
             if(!statusConnection)
                 Message = "Disconnection error!";
         }
-
+    }
+/*==========================================================================================*\
+- - - - - - - - - - - - - Slow Link PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\*==========================================================================================*/
+    if(ConnectionInfo.connectionType == SlowLink){
+        if(statusConnection == false){
+            // - - - Подлючение - - - //
+            NameConnection = "DownLink: " + QString::number(ConnectionInfo.NumOfDownLink);
+            MCHS->setSN(ConnectionInfo.USB_SN);
+            statusConnection = MCHS->openUSB();
+            MCHS->GeneratorsOff();
+            if(!statusConnection){
+                Message = "Connection error!";
+                return false;
+            }
+            return true;
+        }
+        if(statusConnection == true){
+            // - - - Отключение - - - //
+            statusConnection = !MCHS->closeUSB();
+            if(!statusConnection){
+                Message = "Disconnection error!";
+                return false;
+            }
+            return true;
+        }
     }
 }
 
@@ -856,6 +906,22 @@ bool ConnectionManager::write(QList<unsigned int> *Addr, QList<unsigned int> *Da
             return false;
         }
     }
+
+    if(ConnectionInfo.connectionType == SlowLink){
+        if(Addr->size() == Data->size()){
+            bool status;
+            status = MCHS->CLink_TxRx(ConnectionInfo.NumOfDownLink,202,Addr,Data);
+            if(!status){
+                Message = "Sending error! : "+QString::fromStdString(Eth_Device->Message);
+                return false;
+            }
+        }else{
+            Message = "Addr->size() != Data->size()";
+            return false;
+        }
+    }
+
+
     return true;
 }
 
@@ -865,8 +931,9 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
         Message = "Address list is empty!";
         return false;
     }
-    WORD* OutData  = new WORD[Addr->size()];
+
     if(ConnectionInfo.connectionType == UDP){
+            WORD* OutData  = new WORD[Addr->size()];
             bool status;
             status = Eth_Device->read(QListToWord(Addr),OutData,Addr->size());
             if(!status){
@@ -875,6 +942,21 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
             }
             *Data = WordToQList(OutData,Addr->size());
     }
+
+    if(ConnectionInfo.connectionType == SlowLink){
+        bool status;
+        status = MCHS->CLink_TxRx(ConnectionInfo.NumOfDownLink,193,Addr,new QList<unsigned int>);
+        QList<unsigned int> *OutData = new QList<unsigned int>();
+        MCHS->ReadDataFromDownLink(ConnectionInfo.NumOfDownLink,OutData);
+        for(int i = 0;i<Addr->size();i++){
+            Data->append(OutData->at(i));
+        }
+        if(!status){
+            Message = "Receive error! : "+QString::fromStdString(Eth_Device->Message);
+            return false;
+        }
+    }
+
     return true;
 
 }

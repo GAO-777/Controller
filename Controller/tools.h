@@ -1,8 +1,7 @@
 #ifndef TOOLS_H
 #define TOOLS_H
-#include <Windows.h>
-#include "ethernet_interface.h"
-#include "USB_Interface.h"
+
+// - - - QT - - - - - - - - - - //
 #include <QTableWidget>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -10,16 +9,24 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include<QSettings>
-#include<QFileDialog>
+#include <QSettings>
+#include <QFileDialog>
 #include <QComboBox>
-#include<QList>
-#include<QCloseEvent>
-#include<QSpinBox>
+#include <QList>
+#include <QCloseEvent>
+#include <QSpinBox>
 #include <QValidator>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QMessageBox>
+
+// - - - Windows - - - - - - - - - - //
+#include <Windows.h>
+
+// - - - BINP - - - - - - - - - - //
+#include "ethernet_interface.h"
+#include "USB_Interface.h"
+#include "binp_device.h"
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
   ███████████████████████████───█─█─█─██─█────█───█───█────█─██─█───█████████████████████████████
@@ -52,6 +59,8 @@ struct Connection_Info {
     // - - - UDP - - - //
     QString IP_addrress;
     int Port;
+    // - - - SlowLink - - - //
+    int NumOfDownLink;  // Номер используемого DownLink'a
 };
 
 
@@ -198,9 +207,12 @@ public:
     QLineEdit*  IPaddress;
     QSpinBox*  Port;
 /*==========================================================================================*\
-- - - - - - - - - - - - - UDP PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - SlowLink PAGE - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \*==========================================================================================*/
-    QWidget* SlowLink_page;
+    QLabel* Num_DL_label;
+    QWidget*    SlowLink_page;
+    QSpinBox*   NumOfDownLink_sp;      // Номер Down_Link'a, к которому подлючено устройство
+
 
 private slots:
     void on_ApplyButton_clicked();
@@ -264,6 +276,7 @@ public:
     QString Message;
     Ethernet_Interface* Eth_Device;     // Ethernet соединение
     USB_Interface*      USB_Device;     // USB соединение
+    MCHS_Imitator*      MCHS;           // Имитатор МЧС, который будет управять устройством
 
     void setConnectionSettings(Connection_Info CI){ ConnectionInfo = CI;}
     bool connectDevice();

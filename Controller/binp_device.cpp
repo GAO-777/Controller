@@ -88,7 +88,7 @@ int MCHS_Imitator::getStartAddrOfDownLink(int numOfDownLink)
     return DL_startAddr;
 }
 
-bool MCHS_Imitator::USBtoCLink_RedirRead(int numOfDownLink, unsigned short CL_Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::USBtoCLink_RedirRead(int numOfDownLink, unsigned int CL_Addr, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
 
@@ -100,8 +100,8 @@ bool MCHS_Imitator::USBtoCLink_RedirRead(int numOfDownLink, unsigned short CL_Ad
         data[i] = 0;
     }
     unsigned int* InData = new unsigned int[size]; // Массив прочитанных данных
-    unsigned short startAddr = getStartAddrOfDownLink(numOfDownLink);
-    unsigned short startAddrRead = startAddr +17;
+    unsigned int startAddr = getStartAddrOfDownLink(numOfDownLink);
+    unsigned int startAddrRead = startAddr +17;
 
     addr[0] = startAddr;
     data[0] = 130;
@@ -132,7 +132,7 @@ bool MCHS_Imitator::USBtoCLink_RedirRead(int numOfDownLink, unsigned short CL_Ad
 
 }
 
-bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned short CL_Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned int CL_Addr, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
     int size = 12;
@@ -143,7 +143,7 @@ bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned short CL_Addr, 
         data[i] = 0;
     }
 
-    unsigned short DL_startAddr = getStartAddrOfDownLink(numOfDownLink); // Указывает на первую ячейку памяти адресного про-ва выбранного DownLink'a
+    unsigned int DL_startAddr = getStartAddrOfDownLink(numOfDownLink); // Указывает на первую ячейку памяти адресного про-ва выбранного DownLink'a
 
 // - - - Заполняем массив адресов и данных для обмена - - - //
     // Заполняем таблицe ресурсов модуля Down_Link
@@ -176,7 +176,7 @@ bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned short CL_Addr, 
     delete[] data;
 }
 
-bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned short> *Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned int> *Addr, QList<unsigned int> *Data)
 {
     /*
        Данная команда осуществляет запись данных во внутренние ресурсы устройств, путем использования Командных Листов (КЛ).
@@ -195,12 +195,6 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned sho
     int rA = 0;
     bool wD = true;     // Нужно ли заполнять лист данных КЛ?
 
-    // Проверка, что кол-во адресов равно кол-ву данных
-    if (Addr->size() == Data->size())
-        N = Addr->size();
-    else
-        return false;
-
     switch(opcode)
         {
           case 193: rA=0;   wD=false; break;
@@ -214,10 +208,19 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned sho
           default : return false;
         }
 
-    QList<unsigned short>* Addr_local = new QList<unsigned short>();
-    QList<unsigned short>* Data_local = new QList<unsigned short>();
-    QList<unsigned short> addr8 = QList<unsigned short>(); // Контейнер для хранения 8 слов для записи
-    QList<unsigned short> data8 = QList<unsigned short>(); // Контейнер для хранения 8 слов для записи
+    // Проверка, что кол-во адресов равно кол-ву данных
+    if (wD)
+        if(Addr->size() == Data->size())
+            N = Addr->size();
+        else return false;
+    else if(!wD)
+        N = Addr->size();
+
+
+    QList<unsigned int>* Addr_local = new QList<unsigned int>();
+    QList<unsigned int>* Data_local = new QList<unsigned int>();
+    QList<unsigned int> addr8 = QList<unsigned int>(); // Контейнер для хранения 8 слов для записи
+    QList<unsigned int> data8 = QList<unsigned int>(); // Контейнер для хранения 8 слов для записи
 
     int cycle = ((N%64)==0) ? N/64 : (N/64)+1;
     for(int i=0;i<cycle*64;i++){
@@ -250,7 +253,7 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned sho
         // После того, как КЛ заполнены, то отправляем соответствующую команду, чтоб инициировать выполнение
         CLink_sendOpcode(numOfDownLink,opcode);
         addr_RedirOffset = 0;
-    }
+    }   
 
     delete Addr_local;
     delete Data_local;
@@ -268,7 +271,7 @@ bool MCHS_Imitator::CLink_sendOpcode(int numOfDownLink, int opcode)
        Addr   = new WORD[size];
        Data   = new WORD[size];
 
-       unsigned short DL_startAddr = getStartAddrOfDownLink(numOfDownLink); // Указывает на первую ячейку памяти адресного про-ва выбранного DownLink'a
+       unsigned int DL_startAddr = getStartAddrOfDownLink(numOfDownLink); // Указывает на первую ячейку памяти адресного про-ва выбранного DownLink'a
 
        Addr[0] = DL_startAddr;
        Data[0] = opcode;
@@ -283,7 +286,7 @@ bool MCHS_Imitator::CLink_sendOpcode(int numOfDownLink, int opcode)
 }
 
 
-bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned short> *Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned int> *Addr, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
     if (N > 5) return false;
@@ -295,7 +298,7 @@ bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned short> *Ad
         data[i] = 0;
     }
 
-    unsigned short startAddr = 0;
+    unsigned int startAddr = 0;
 
     switch (numOfDownLink)
     {
@@ -347,10 +350,10 @@ bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned short> *Ad
     delete[] data;
 }
 
-bool MCHS_Imitator::SendWrite154(int numOfDownLink, int N, QList<unsigned short> *Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::SendWrite154(int numOfDownLink, int N, QList<unsigned int> *Addr, QList<unsigned int> *Data)
 {
-    QList<unsigned short> *addr4 = new QList<unsigned short>();
-    QList<unsigned short> *data4 = new QList<unsigned short>();
+    QList<unsigned int> *addr4 = new QList<unsigned int>();
+    QList<unsigned int> *data4 = new QList<unsigned int>();
     for(int i=0;i<(4*(N/4));i++){
         if(i%4 != 3){
             addr4->append(Addr->at(i));
@@ -379,7 +382,7 @@ bool MCHS_Imitator::SendWrite154(int numOfDownLink, int N, QList<unsigned short>
     return true;
 }
 
-bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned short> *Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned int> *Addr, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
     if (N > 9) return false;
@@ -393,8 +396,8 @@ bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned short> *A
         data[i] = 0;
     }
     unsigned int* InData = new unsigned int[N]; // Массив прочитанных данных
-    unsigned short startAddr = 0;
-    unsigned short startAddrRead = 0;
+    unsigned int startAddr = 0;
+    unsigned int startAddrRead = 0;
     switch (numOfDownLink)
     {
         case 1: startAddr       = DL_1;
@@ -458,10 +461,10 @@ bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned short> *A
     return true;
 }
 
-bool MCHS_Imitator::SendRead145(int numOfDownLink, int N, QList<unsigned short> *Addr, QList<unsigned short> *Data)
+bool MCHS_Imitator::SendRead145(int numOfDownLink, int N, QList<unsigned int> *Addr, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
-    QList<unsigned short> *addr8 = new QList<unsigned short>();
+    QList<unsigned int> *addr8 = new QList<unsigned int>();
     for(int i=0;i<N;i++){
 
         if(i%8 != 7){
@@ -535,7 +538,7 @@ bool MCHS_Imitator::Init_Waiting193(int numOfDownLink)
     USB_Write_Data(USB_Device,addr,9,data);
 }
 
-bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned short> *Data)
+bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned int> *Data)
 {
     if (numOfDownLink > 8) return false;
     int N = 64;
@@ -543,7 +546,7 @@ bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned short
     WORD* addrRead = new WORD[N];
 
     unsigned int* InData = new unsigned int[N]; // Массив прочитанных данных
-    unsigned short startAddrRead = 0;
+    unsigned int startAddrRead = 0;
     switch (numOfDownLink)
     {
         case 1: startAddrRead   = DL_1 + 17;
@@ -595,14 +598,14 @@ ADIS::ADIS()
 bool ADIS::setData_FL(MCHS_Imitator* MCHS_Imitator, int numOfDownLink, int data)
 {
 
-    QList<unsigned short> *Addr = new QList<unsigned short>();
-    QList<unsigned short> *Data = new QList<unsigned short>();
+    QList<unsigned int> *Addr = new QList<unsigned int>();
+    QList<unsigned int> *Data = new QList<unsigned int>();
 
-    QList<unsigned short> *Addr1 = new QList<unsigned short>();
-    QList<unsigned short> *Data1 = new QList<unsigned short>();
+    QList<unsigned int> *Addr1 = new QList<unsigned int>();
+    QList<unsigned int> *Data1 = new QList<unsigned int>();
 
-    QList<unsigned short> *ReadAddr = new QList<unsigned short>();
-    QList<unsigned short> *ReadData = new QList<unsigned short>();
+    QList<unsigned int> *ReadAddr = new QList<unsigned int>();
+    QList<unsigned int> *ReadData = new QList<unsigned int>();
 
 
 

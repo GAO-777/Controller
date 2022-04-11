@@ -3,9 +3,6 @@
 
 #include <QWidget>
 #include "tools.h"
-#include "ethernet_interface.h"
-#include "USB_Interface.h"
-#include <QUdpSocket>
 #include <QMessageBox>
 namespace Ui {
 class ControllerTab;
