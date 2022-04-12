@@ -40,6 +40,7 @@ void printSendData(QString str, QList<unsigned int> *Addr, QList<unsigned int> *
 }
 
 bool CLToQList(QString openFileName,QList<unsigned int> *Addr, QList<unsigned int> *Data){
+    /* Функция преобразует пользовательский файл в список команд */
     QStringList inputData;
     QFile file(openFileName);
 
@@ -56,7 +57,7 @@ bool CLToQList(QString openFileName,QList<unsigned int> *Addr, QList<unsigned in
             QString line = i->toStdString().c_str();
             line.remove("\n");
 
-            if(line.indexOf("-") >= 0) continue;;
+            if(line.indexOf("-") >= 0) continue;
 
             // - - - Запись - - - - - - - - - - - - - - - - - - - - - - - - //
             if(line.indexOf("<=") > 0){
@@ -96,6 +97,8 @@ bool CLToQList(QString openFileName,QList<unsigned int> *Addr, QList<unsigned in
 
             }
 
+
+
         }
     }
 }
@@ -110,11 +113,226 @@ bool CLToQList(QString openFileName,QList<unsigned int> *Addr, QList<unsigned in
   ██████████████████████████████────█────█─██─█───█────█───█───██████████████████████████████████
   ███████████████████████████████████████████████████████████████████████████████████████████████
 \*===============================================================================================*/
-Console::Console(QPlainTextEdit *parent) : QPlainTextEdit(parent)
-{
-    this->setFont(QFont("Consolas",9, QFont::Normal));
+#include <QScrollBar>
+#include <QTextBlock>
 
+Console::Console(QWidget *parent) :
+    QPlainTextEdit(parent)
+{
+    QSizePolicy policy;
+    policy.setHorizontalPolicy(QSizePolicy::Preferred);
+
+    setMinimumHeight(100);
+    setSizePolicy(policy);
+
+
+    QPalette p = palette();
+    setPalette(p);
+
+    history = new QStringList;
+    historyPos = 0;
+    insertPrompt(false);
+    isLocked = false;
 }
+
+void Console::commandHandler(QString commandStr)
+{
+    QStringList commandArray = commandStr.split(" ");
+
+    if(commandArray[0] == "do"){
+        qDebug()<<"sdfs";
+    }
+}
+
+void Console::print(QString s, QString type)
+{
+    textCursor().insertBlock();
+    QTextCharFormat format;
+
+    if(type == "e"){
+        format.setForeground(Qt::red);
+        QFont font;
+        font.setBold(true);
+        format.setFont(font);
+        s = "ERROR : " + s;
+    } else if(type == "w"){
+        format.setForeground(QBrush(QColor(236,124,38)));
+        QFont font;
+        font.setBold(true);
+        format.setFont(font);
+        s = "WARNING : " + s;
+    } else if(type == "m"){
+        format.setForeground(Qt::blue);
+        QFont font;
+        font.setBold(false);
+        format.setFont(font);
+    }
+    textCursor().setBlockCharFormat(format);
+    textCursor().insertText(s);
+}
+
+
+void Console::onEnter()
+{
+    moveCursor(QTextCursor::End);
+    if(textCursor().positionInBlock() == prompt.length())
+    {
+        insertPrompt();
+        return;
+    }
+    QString cmd = textCursor().block().text().mid(prompt.length());
+
+    //isLocked = true;
+    historyAdd(cmd);
+    commandHandler(cmd);
+}
+
+void Console::lock(bool lock)
+{
+    isLocked = lock;
+    insertPrompt();
+}
+
+void Console::keyPressEvent(QKeyEvent *e)
+{
+    if(isLocked)
+        return;
+    switch (e->key()) {
+    case Qt::Key_Return:
+            onEnter();
+        break;
+    case Qt::Key_Backspace:
+        if( e->modifiers() == Qt::NoModifier
+               && textCursor().positionInBlock() > prompt.length())
+                QPlainTextEdit::keyPressEvent(e);
+        break;
+   case Qt::Key_Up:
+            historyBack();
+        break;
+
+    case Qt::Key_Down :
+             historyForward();
+         break;
+
+    case Qt::Key_Left :
+        if(textCursor().positionInBlock() != prompt.length())
+             moveCursor(QTextCursor::PreviousCharacter);
+         break;
+
+    case Qt::Key_End :
+             moveCursor(QTextCursor::EndOfBlock);
+         break;
+
+    case Qt::Key_Home :
+             moveCursor(QTextCursor::StartOfBlock);
+             moveCursor(QTextCursor::NextWord);
+         break;
+
+    default:
+                QPlainTextEdit::keyPressEvent(e);
+        break;
+    }
+}
+
+void Console::mousePressEvent(QMouseEvent *e)
+{
+    Q_UNUSED(e)
+    setFocus();
+}
+
+void Console::mouseDoubleClickEvent(QMouseEvent *e)
+{
+    Q_UNUSED(e)
+    setFocus();
+}
+
+
+void Console::contextMenuEvent(QContextMenuEvent *e)
+{
+    Q_UNUSED(e)
+}
+void Console::output(QString s, QString type)
+{
+    textCursor().insertBlock();
+    QTextCharFormat format;
+
+
+    if(type == "e"){
+        format.setForeground(Qt::red);
+        QFont font;
+        font.setBold(true);
+        format.setFont(font);
+        s = "ERROR : " + s;
+    } else if(type == "w"){
+        format.setForeground(QBrush(QColor(236,124,38)));
+        QFont font;
+        font.setBold(true);
+        format.setFont(font);
+        s = "WARNING : " + s;
+    } else if(type == "m"){
+        format.setForeground(Qt::blue);
+        QFont font;
+        font.setBold(false);
+        format.setFont(font);
+    }
+    textCursor().setBlockCharFormat(format);
+    textCursor().insertText(s);
+    insertPrompt();
+    isLocked = false;
+}
+
+void Console::insertPrompt(bool insertNewBlock)
+{
+    if(insertNewBlock)
+        textCursor().insertBlock();
+    QTextCharFormat format;
+    format.setForeground(Qt::black);
+    textCursor().setBlockCharFormat(format);
+    textCursor().insertText(prompt);
+    scrollDown();
+}
+
+void Console::scrollDown()
+{
+    QScrollBar *vbar = verticalScrollBar();
+    vbar->setValue(vbar->maximum());
+}
+
+void Console::historyAdd(QString cmd)
+{
+    history->append(cmd);
+    historyPos = history->length();
+}
+
+void Console::historyBack()
+{
+    if(!historyPos)
+    return;
+    QTextCursor cursor = textCursor();
+    cursor.movePosition(QTextCursor::StartOfBlock);
+    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+    cursor.insertText(prompt + history->at(historyPos-1));
+    setTextCursor(cursor);
+    historyPos--;
+}
+
+void Console::historyForward()
+{
+    if(historyPos == history->length())
+    return;
+    QTextCursor cursor = textCursor();
+    cursor.movePosition(QTextCursor::StartOfBlock);
+    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+    if(historyPos == history->length() - 1)
+    cursor.insertText(prompt);
+    else
+    cursor.insertText(prompt + history->at(historyPos + 1));
+    setTextCursor(cursor);
+    historyPos++;
+}
+
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████
   ████████████────█────█─███─█─███─█────█─██─█────██─███───█───█───██████████████████

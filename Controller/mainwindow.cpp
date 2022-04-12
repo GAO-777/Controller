@@ -16,8 +16,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::closeTab(int tab)
+{
+    ui->Control_Connections_tw->tabBar()->removeTab(tab);
+    ui->Control_Connections_tw->widget(tab)->close();
+    ui->Control_Connections_tw->setCurrentIndex(tab-1);
+}
 
-void MainWindow::on_AddConnection_pb_clicked()
+void MainWindow::on_NewConnection_action_triggered()
 {
     ControllerTab* newTab = new ControllerTab();
     ui->Control_Connections_tw->addTab(newTab,"Controller Tab");
@@ -25,9 +31,3 @@ void MainWindow::on_AddConnection_pb_clicked()
     ui->Control_Connections_tw->setCurrentIndex(indexOfnewTab);
 }
 
-void MainWindow::closeTab(int tab)
-{
-    ui->Control_Connections_tw->tabBar()->removeTab(tab);
-    ui->Control_Connections_tw->widget(tab)->close();
-    ui->Control_Connections_tw->setCurrentIndex(tab-1);
-}

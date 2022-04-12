@@ -20,8 +20,8 @@ public:
     ConnectionsBar* ConnectionBar;
 
 private slots:
-    void on_AddConnection_pb_clicked();
     void closeTab(int tab);
+    void on_NewConnection_action_triggered();
 
 private:
     Ui::MainWindow *ui;

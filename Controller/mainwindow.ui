@@ -21,20 +21,6 @@
        <number>7</number>
       </property>
       <item>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QPushButton" name="AddConnection_pb">
-          <property name="text">
-           <string>Add connection</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
        <widget class="QTabWidget" name="Control_Connections_tw">
         <property name="currentIndex">
          <number>-1</number>
@@ -57,8 +43,20 @@
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuNew_connection">
+    <property name="title">
+     <string>Сonnections</string>
+    </property>
+    <addaction name="NewConnection_action"/>
+   </widget>
+   <addaction name="menuNew_connection"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="NewConnection_action">
+   <property name="text">
+    <string>New connection</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
