@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "tools.h"
+#include "../../C_lib/Qt_lib/tools.h"
 #include "controllertab.h"
 
 QT_BEGIN_NAMESPACE

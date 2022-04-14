@@ -2,7 +2,7 @@
 #define CONTROLLERTAB_H
 
 #include <QWidget>
-#include "tools.h"
+#include "../../C_lib/Qt_lib/tools.h"
 #include <QMessageBox>
 namespace Ui {
 class ControllerTab;
