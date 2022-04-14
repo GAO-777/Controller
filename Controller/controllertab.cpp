@@ -29,6 +29,10 @@ ControllerTab::ControllerTab(QWidget *parent) :
 
 ControllerTab::~ControllerTab()
 {
+    delete RW_Lists;
+    delete Console;
+    delete ConnectionBar;
+    delete connectionManager;
     delete ui;
 }
 
