@@ -10,24 +10,24 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    USB_Interface.cpp \
-    binp_device.cpp \
+    ../../C_lib/Interfaces/ethernet_interface.cpp \
+    ../../C_lib/Interfaces/USB_Interface.cpp \
+    ../../C_lib/Qt_lib/binp_device.cpp \
+    ../../C_lib/Qt_lib/tools.cpp \
     controllertab.cpp \
-    ethernet_interface.cpp \
     main.cpp \
     mainwindow.cpp \
-    tools.cpp
 
 HEADERS += \
-    USB_Interface.h \
-    binp_device.h \
+    ../../C_lib/Interfaces/ethernet_interface.h \
+    ../../C_lib/Interfaces/USB_Interface.h \
+    ../../C_lib/Qt_lib/binp_device.h \
+    ../../C_lib/Qt_lib/tools.h \
     controllertab.h \
-    ethernet_interface.h \
     mainwindow.h \
-    tools.h
 
 FORMS += \
-    connectionsetup.ui \
+    ../../C_lib/Qt_lib/connectionsetup.ui \
     controllertab.ui \
     mainwindow.ui
 

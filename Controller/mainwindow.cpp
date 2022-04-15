@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     //this->setFont(QFont("Consolas",9, QFont::Normal));
-    connect(ui->Control_Connections_tw->tabBar(), &QTabBar::tabCloseRequested,this, &MainWindow::closeTab);
+    connect(ui->TabWidget_tw->tabBar(), &QTabBar::tabCloseRequested,this, &MainWindow::closeTab);
 
 }
 
@@ -18,16 +18,14 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeTab(int tab)
 {
-    ui->Control_Connections_tw->tabBar()->removeTab(tab);
-    ui->Control_Connections_tw->widget(tab)->close();
-    ui->Control_Connections_tw->setCurrentIndex(tab-1);
+    ui->TabWidget_tw->removeTab(tab);
 }
 
 void MainWindow::on_NewConnection_action_triggered()
 {
-    ControllerTab* newTab = new ControllerTab();
-    ui->Control_Connections_tw->addTab(newTab,"Controller Tab");
-    int indexOfnewTab = ui->Control_Connections_tw->indexOf(newTab);
-    ui->Control_Connections_tw->setCurrentIndex(indexOfnewTab);
+    ControllerTab* newTab = new ControllerTab(ui->TabWidget_tw);
+    int indexOfnewTab = ui->TabWidget_tw->addTab(newTab,"1");
+    ui->TabWidget_tw->setTabText(indexOfnewTab,"Controller Tab "+QString::number(indexOfnewTab));
+    ui->TabWidget_tw->setCurrentIndex(indexOfnewTab);
 }
 

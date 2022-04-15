@@ -21,7 +21,7 @@
        <number>7</number>
       </property>
       <item>
-       <widget class="QTabWidget" name="Control_Connections_tw">
+       <widget class="QTabWidget" name="TabWidget_tw">
         <property name="currentIndex">
          <number>-1</number>
         </property>
