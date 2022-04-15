@@ -13,20 +13,18 @@ SOURCES += \
     ../../C_lib/Interfaces/ethernet_interface.cpp \
     ../../C_lib/Interfaces/USB_Interface.cpp \
     ../../C_lib/Qt_lib/binp_device.cpp \
+    ../../C_lib/Qt_lib/tools.cpp \
     controllertab.cpp \
     main.cpp \
     mainwindow.cpp \
-    ../../C_lib/Qt_lib/tools.cpp
 
 HEADERS += \
     ../../C_lib/Interfaces/ethernet_interface.h \
     ../../C_lib/Interfaces/USB_Interface.h \
     ../../C_lib/Qt_lib/binp_device.h \
-    ../../C_lib/Qt_lib/binp_device.h \
     ../../C_lib/Qt_lib/tools.h \
     controllertab.h \
     mainwindow.h \
-    ../../C_lib/Qt_lib/tools.h
 
 FORMS += \
     ../../C_lib/Qt_lib/connectionsetup.ui \
