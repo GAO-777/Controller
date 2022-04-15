@@ -197,7 +197,7 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned int
 
     switch(opcode)
         {
-          case 193: rA=0;   wD=false; break;
+          case 193: rA=0;   wD=false; break;//&&
           case 210: rA=128; wD=false; break;
           case 226: rA=256; wD=false; break;
           case 241: rA=384; wD=false; break;
@@ -259,7 +259,6 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned int
     delete Data_local;
 
     return true;
-
 }
 
 bool MCHS_Imitator::CLink_sendOpcode(int numOfDownLink, int opcode)

@@ -66,9 +66,28 @@ void ControllerTab::read()
 
 }
 
+void ControllerTab::dataReceived()
+{
+    while(udpSocket->hasPendingDatagrams())// Есть дейтаграмма для чтения
+        {
+            QByteArray* datagram = new QByteArray();
+            datagram->resize(udpSocket->pendingDatagramSize());
+            udpSocket->readDatagram(datagram->data(),datagram->size());
+            QList<unsigned int> *Data = EthDatagramToList(datagram);
+            Console->printTable(Data);
+        }
 
+}
 
-void ControllerTab::on_pushButton_clicked()
+void ControllerTab::on_Start_Server_pb_clicked()
+{
+    udpSocket = new QUdpSocket(this);		// Создаем QUdpSocket
+    connect(udpSocket,&QUdpSocket::readyRead,this,&ControllerTab::dataReceived);
+
+      bool result=udpSocket->bind(27015);// Привязать порт
+}
+
+void ControllerTab::on_Run_executable_file_pb_clicked()
 {
     QString openFileName = QFileDialog::getOpenFileName(this,
                                                         "Open file",
@@ -78,4 +97,5 @@ void ControllerTab::on_pushButton_clicked()
     QList<unsigned int>* Data = new QList<unsigned int>();
     CLToQList(openFileName,Addr,Data);
     connectionManager->read(Addr,Data);
+
 }

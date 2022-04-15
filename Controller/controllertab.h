@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "tools.h"
 #include <QMessageBox>
+#include <QUdpSocket>
 namespace Ui {
 class ControllerTab;
 }
@@ -22,13 +23,20 @@ public:
     Connection_Info ConnectionInfo;
     ConnectionManager* connectionManager;
 
+     QUdpSocket* udpSocket;
+
     void setConnectionSettings(Connection_Info CI){connectionManager->ConnectionInfo = CI;};
     void connectDevice();
     void write();
     void read();
 
+    void dataReceived();
+
 private slots:
-    void on_pushButton_clicked();
+
+    void on_Start_Server_pb_clicked();
+
+    void on_Run_executable_file_pb_clicked();
 
 private:
     Ui::ControllerTab *ui;

@@ -21,7 +21,7 @@ public:
     bool closeSocket();                               // закрывает сокет
     bool write(WORD *Addr, WORD *Data, int size);
     bool read(WORD *Addr, WORD *Data, int size);
-    bool Bind();
+    bool bindThisSocket();
 
 public:
     int LastError;  // Хранит последний код ошибки
@@ -29,7 +29,7 @@ protected:
     struct sockaddr_in MServer;
     WSADATA MWSA;
     SOCKET  Socket;
-    bool Exchange(char *array, int array_len, int slen, DWORD timeout);
+    bool exchange(char *array, int array_len, int slen, DWORD timeout);
 };
 void WordToByte(int W,char *C);
 

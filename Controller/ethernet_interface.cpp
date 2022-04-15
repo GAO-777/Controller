@@ -48,7 +48,7 @@ bool Ethernet_Interface::closeSocket()
 
 }
 
-bool Ethernet_Interface::Exchange(char *array, int array_len, int slen, DWORD timeout)
+bool Ethernet_Interface::exchange(char *array, int array_len, int slen, DWORD timeout)
 {
     if (sendto(Socket, array, array_len, 0, (struct sockaddr*) &MServer, slen) == SOCKET_ERROR)
     {
@@ -82,7 +82,7 @@ bool Ethernet_Interface::write(WORD *Addr, WORD *Data, int size)
             WordToByte(Data[i],(array+i*4+4));   // данные
     }
 
-    return Exchange(array, array_len, slen, 200);
+    return exchange(array, array_len, slen, 200);
 }
 
 bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
@@ -103,18 +103,25 @@ bool Ethernet_Interface::read(WORD *Addr, WORD *Data, int size)
         WordToByte(0,(array+i*4+4));   // данные
     }
 
-    bool Exchange_Status = Exchange(array, array_len, slen, 200);
+    bool exchange_Status = exchange(array, array_len, slen, 200);
 
-    if(Exchange_Status)
+    if(exchange_Status)
         for(i=0;i<size;i++)
             Data[i] = (((WORD)array[i*4+4]<<8)&0xFF00)+(((WORD)array[i*4+5])&0xFF);
 
-    return Exchange_Status;
+    return exchange_Status;
 }
 
-bool Ethernet_Interface::Bind()
+bool Ethernet_Interface::bindThisSocket()
 {
-    bind(Socket, (SOCKADDR *) &MServer, sizeof(MServer));
+   //Привязывание сокета к прослушиваемому порту
+    int status = bind(Socket, (SOCKADDR *) &MServer, sizeof(MServer));
+    if(status == SOCKET_ERROR){
+        LastError =  WSAGetLastError();
+        WSACleanup();
+        return false;
+    }
+    return true;
 }
 
 void WordToByte(int W, char *C)

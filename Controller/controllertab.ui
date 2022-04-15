@@ -32,9 +32,16 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="Run_executable_file_pb">
        <property name="text">
-        <string>PushButton</string>
+        <string>Run executable file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Start_Server_pb">
+       <property name="text">
+        <string>Start server</string>
        </property>
       </widget>
      </item>
