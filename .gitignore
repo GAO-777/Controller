@@ -1,3 +1,4 @@
 **/build*/
 *.user.*
 Controller/Controller.pro.user
+*.cl
