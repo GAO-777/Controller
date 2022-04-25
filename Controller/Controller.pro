@@ -36,8 +36,9 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32: LIBS += -L$$PWD/Drv/amd64/ -lftd2xx
 win32: LIBS += -lws2_32
 
-INCLUDEPATH += $$PWD/Drv/amd64
-DEPENDPATH += $$PWD/Drv/amd64
+win32: LIBS += -L$$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64/ -lftd2xx
+
+INCLUDEPATH += $$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64
+DEPENDPATH += $$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64
