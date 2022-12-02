@@ -10,24 +10,24 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    ../../C_lib/Interfaces/ethernet_interface.cpp \
-    ../../C_lib/Interfaces/USB_Interface.cpp \
-    ../../C_lib/Qt_lib/binp_device.cpp \
-    ../../C_lib/Qt_lib/tools.cpp \
+    lib/Interfaces/ethernet_interface.cpp \
+    lib/Interfaces/USB_Interface.cpp \
+    lib/Qt_lib/binp_device.cpp \
+    lib/Qt_lib/tools.cpp \
     controllertab.cpp \
     main.cpp \
     mainwindow.cpp \
 
 HEADERS += \
-    ../../C_lib/Interfaces/ethernet_interface.h \
-    ../../C_lib/Interfaces/USB_Interface.h \
-    ../../C_lib/Qt_lib/binp_device.h \
-    ../../C_lib/Qt_lib/tools.h \
+    lib/Interfaces/ethernet_interface.h \
+    lib/Interfaces/USB_Interface.h \
+    lib/Qt_lib/binp_device.h \
+    lib/Qt_lib/tools.h \
     controllertab.h \
     mainwindow.h \
 
 FORMS += \
-    ../../C_lib/Qt_lib/connectionsetup.ui \
+    lib/Qt_lib/connectionsetup.ui \
     controllertab.ui \
     mainwindow.ui
 
@@ -38,7 +38,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 win32: LIBS += -lws2_32
 
-win32: LIBS += -L$$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64/ -lftd2xx
+win32: LIBS += -L$$PWD/lib/Interfaces/FTDI_Drv/amd64/ -lftd2xx
 
-INCLUDEPATH += $$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64
-DEPENDPATH += $$PWD/../../C_lib/Interfaces/FTDI_Drv/amd64
+INCLUDEPATH += $$PWD/lib/Interfaces/FTDI_Drv/amd64
+DEPENDPATH += $$PWD/libC_lib/Interfaces/FTDI_Drv/amd64

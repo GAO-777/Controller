@@ -2,7 +2,7 @@
 #define CONTROLLERTAB_H
 
 #include <QWidget>
-#include "../../C_lib/Qt_lib/tools.h"
+#include "lib/Qt_lib/tools.h"
 #include <QMessageBox>
 #include <QUdpSocket>
 namespace Ui {
