@@ -85,10 +85,35 @@ void ControllerTab::dataReceived()
 
 void ControllerTab::on_Start_Server_pb_clicked()
 {
-    udpSocket = new QUdpSocket(this);		// Создаем QUdpSocket
-    connect(udpSocket,&QUdpSocket::readyRead,this,&ControllerTab::dataReceived);
+   // udpSocket = new QUdpSocket(this);		// Создаем QUdpSocket
+    //connect(udpSocket,&QUdpSocket::readyRead,this,&ControllerTab::dataReceived);
 
-      bool result=udpSocket->bind(27015);// Привязать порт
+     // bool result=udpSocket->bind(27015);// Привязать порт 63820
+
+    int N_words =100;
+    int N_cycle =1000;
+    int num_er=0;
+
+    for(int i=0;i<N_cycle;i++){
+        QList<unsigned int> *Addr = new  QList<unsigned int>;
+        QList<unsigned int> *Data = new  QList<unsigned int>;
+        for(int i=0;i<N_words;i++){
+            Addr->append(8192+i);
+            Data->append(rand());
+        }
+
+
+        QList<unsigned int> *ReadData = new QList<unsigned int> ();
+         bool status = connectionManager->write(Addr,Data);
+        status = connectionManager->read(Addr,ReadData);
+        for(int k=0;k<N_words;k++)
+            if(ReadData->at(k)!=Data->at(k)){
+                qDebug()<<"error";
+                num_er++;
+            }
+         qDebug()<<i;
+        }
+     qDebug()<<num_er;
 }
 
 void ControllerTab::on_Run_executable_file_pb_clicked()
@@ -100,6 +125,6 @@ void ControllerTab::on_Run_executable_file_pb_clicked()
     QList<unsigned int>* Addr = new QList<unsigned int>();
     QList<unsigned int>* Data = new QList<unsigned int>();
     CLToQList(openFileName,Addr,Data);
-    connectionManager->read(Addr,Data);
+    connectionManager->write(Addr,Data);
 
 }
