@@ -21,9 +21,12 @@ ControllerTab::ControllerTab(QWidget *parent) :
 
     Console = new class Console();
     ui->Console_vl->addWidget(Console);
+    Console->hide();
 
     connectionManager = new ConnectionManager();
 
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this,&ControllerTab::customContextMenuRequested, this, &ControllerTab::customContextMenuRequest);
 
 }
 
@@ -41,30 +44,32 @@ void ControllerTab::connectDevice()
     connectionManager->connectDevice();
     bool Status = connectionManager->statusConnection;
     ConnectionBar->setStatus(Status,connectionManager->NameConnection);
-    if(Status)
+    if(Status){ // Подлючение
+        Console->print("Device connected","m");
         RW_Lists->unblock();
-    else
+    }
+    else{       // Отключение
+        Console->print("Device disconnected","m");
         RW_Lists->block();
+    }
 }
 
 void ControllerTab::write()
 {
     bool status = connectionManager->write(RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
-    if(status)
-        printSendData("Write Button",RW_Lists->getWriteAddr(),RW_Lists->getWriteData());
-   else
+   Console->print(" sent the package",connectionManager->raw_data);
+    if(!status)
         QMessageBox::critical(this,"Error",connectionManager->Message);
 }
 
 void ControllerTab::read()
 {
-    QList<unsigned int> *Data = new QList<unsigned int> ();
+    QList<unsigned int> *Data = new QList<unsigned int>();
 
     bool status = connectionManager->read(RW_Lists->getReadAddr(),Data);
-    if(status){
-        printSendData("Read Button",RW_Lists->getReadAddr(),Data);
+    Console->print(" received the package",connectionManager->raw_data);
+    if(status)
         RW_Lists->fillReadList(Data);
-    }
     else
         QMessageBox::critical(this,"Error",connectionManager->Message);
 
@@ -81,6 +86,24 @@ void ControllerTab::dataReceived()
             Console->printTable(Data);
         }
 
+}
+
+void ControllerTab::customContextMenuRequest(const QPoint &pos)
+{
+    QMenu* menu = new QMenu();
+
+    if(Console->isHidden()){
+        auto Show_console = menu->addAction("Show console");
+        connect(Show_console, &QAction::triggered, this, [this](){
+            Console->show();
+        });
+    }else{
+        auto Hide_console = menu->addAction("Hide console");
+        connect(Hide_console, &QAction::triggered, this, [this](){
+            Console->hide();
+        });
+    }
+    menu->exec(QCursor::pos());
 }
 
 void ControllerTab::on_Start_Server_pb_clicked()

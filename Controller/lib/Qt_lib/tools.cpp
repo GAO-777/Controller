@@ -22,6 +22,24 @@ WORD* QListToWord(QList<unsigned int> *InData)
     return OutData;
 }
 
+unsigned int* QListToUnInt(QList<unsigned int> *InData)
+{
+    unsigned int* OutData  = new unsigned int[InData->size()];
+    for(int i=0;i<InData->size();i++){
+        OutData[i] = InData->at(i);
+    }
+    return OutData;
+}
+
+QList<unsigned int> UnIntToQList(unsigned int* InData, int size)
+{
+    QList<unsigned int> OutData = QList<unsigned int>();
+    for(int i=0; i<size; i++){
+        OutData.append(InData[i]);
+    }
+    return OutData;
+}
+
 QList<unsigned int> WordToQList(WORD* InData, int size)
 {
     QList<unsigned int> OutData = QList<unsigned int>();
@@ -144,6 +162,9 @@ Console::Console(QWidget *parent) :
     setMinimumHeight(100);
     setSizePolicy(policy);
 
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this,&Console::customContextMenuRequested, this, &Console::customContextMenuRequest);
+
 	this->setFont(QFont("Courier New"));									
 
     QPalette p = palette();
@@ -188,21 +209,38 @@ void Console::print(QString s, QString type)
         QFont font;
         font.setBold(true);
         format.setFont(font);
-        s = "ERROR : " + s;
+        s = ">> ERROR : " + s;
     } else if(type == "w"){
         format.setForeground(QBrush(QColor(236,124,38)));
         QFont font;
         font.setBold(true);
         format.setFont(font);
-        s = "WARNING : " + s;
+        s = ">> WARNING : " + s;
     } else if(type == "m"){
         format.setForeground(Qt::blue);
         QFont font;
         font.setBold(false);
         format.setFont(font);
+        s = ">> " + s;
     }
     textCursor().setBlockCharFormat(format);
     textCursor().insertText(s);
+    insertPrompt();
+    isLocked = false;
+}
+
+void Console::print(QString message, QList<unsigned int>* data)
+{
+    textCursor().insertBlock();
+    QTextCharFormat format;
+    format.setForeground(Qt::blue);
+    textCursor().setBlockCharFormat(format);
+    textCursor().insertText("\n");
+    textCursor().insertText(">> "+ QTime::currentTime().toString("HH:mm:ss")+message+"\n");
+    for(int i=0; i<data->size();i++)
+        textCursor().insertText(QString("%1|").arg(data->at(i),0,16));
+
+    isLocked = false;
 }
 
 
@@ -225,6 +263,17 @@ void Console::lock(bool lock)
 {
     isLocked = lock;
     insertPrompt();
+}
+
+void Console::customContextMenuRequest(const QPoint &pos)
+{
+    QMenu* menu = new QMenu();
+
+    auto Hide_Action = menu->addAction("Hide");
+    connect(Hide_Action, &QAction::triggered, this, [this](){
+       this->hide();
+    });
+    menu->exec(QCursor::pos());
 }
 
 void Console::keyPressEvent(QKeyEvent *e)
@@ -284,35 +333,6 @@ void Console::mouseDoubleClickEvent(QMouseEvent *e)
 void Console::contextMenuEvent(QContextMenuEvent *e)
 {
     Q_UNUSED(e)
-}
-void Console::output(QString s, QString type)
-{
-    textCursor().insertBlock();
-    QTextCharFormat format;
-
-
-    if(type == "e"){
-        format.setForeground(Qt::red);
-        QFont font;
-        font.setBold(true);
-        format.setFont(font);
-        s = "ERROR : " + s;
-    } else if(type == "w"){
-        format.setForeground(QBrush(QColor(236,124,38)));
-        QFont font;
-        font.setBold(true);
-        format.setFont(font);
-        s = "WARNING : " + s;
-    } else if(type == "m"){
-        format.setForeground(Qt::blue);
-        QFont font;
-        font.setBold(false);
-        format.setFont(font);
-    }
-    textCursor().setBlockCharFormat(format);
-    textCursor().insertText(s);
-    insertPrompt();
-    isLocked = false;
 }
 
 void Console::insertPrompt(bool insertNewBlock)
@@ -1121,6 +1141,8 @@ ConnectionManager::ConnectionManager()
     Eth_Device = new Ethernet_Interface();
     USB_Device = new USB_Interface();
     MCHS = new MCHS_Imitator();
+
+    raw_data = new QList<unsigned int>;
 }
 
 ConnectionManager::ConnectionManager(Connection_Info CI)
@@ -1249,20 +1271,24 @@ bool ConnectionManager::write(QList<unsigned int> *Addr, QList<unsigned int> *Da
 
     if(ConnectionInfo.connectionType == USB){
         if(Addr->size() == Data->size()){
-            bool status;
+            int status = USB_Device->write(QListToUnInt(Addr), Addr->size(), QListToUnInt(Data));
 
-
-            status = USB_Write_Data(USB_Device,QListToWord(Addr),Addr->size(), QListToWord(Data));
-            if(!status){
-                Message = "Sending error! : "+QString::number(Eth_Device->LastError);
+            if(status > 0){
+                raw_data->clear();
+                for(int i=0;i<USB_Device->raw_data_size;i++)
+                    raw_data->append(USB_Device->raw_data[i]);
+            }
+            else{
+                Message = USB_Device->Error.c_str();
+                raw_data->clear();
+                for(int i=0;i<USB_Device->raw_data_size;i++)
+                    raw_data->append(USB_Device->raw_data[i]);
                 return false;
             }
-        }else{
-            Message = "Addr->size() != Data->size()";
-            return false;
+
         }
+        return true;
     }
-    return true;
 }
 
 bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Data)
@@ -1298,16 +1324,19 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
     }
 
     if(ConnectionInfo.connectionType == USB){
-        bool status;
-        WORD* addrRead  = new WORD[Addr->size()];
         unsigned int* InData = new unsigned int[Addr->size()];
-        status = USB_Read_Data(USB_Device,QListToWord(Addr),Addr->size(),InData);
-        for(int i=0;i<Addr->size();i++){
-            Data->append(InData[i]);
-        }
+        int status = USB_Device->read(QListToUnInt(Addr),Addr->size(),InData);
 
-        if(!status){
-            Message = "Receive error! : ";
+        if(status > 0){
+            for(int i=0;i<Addr->size();i++)
+                Data->append(InData[i]);
+
+            raw_data->clear();
+            for(int i=0;i<USB_Device->raw_data_size;i++)
+                raw_data->append(USB_Device->raw_data[i]);
+        }
+        else{
+            Message = USB_Device->Error.c_str();
             return false;
         }
     }

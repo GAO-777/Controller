@@ -40,8 +40,8 @@ bool MCHS_Imitator::closeUSB()
 
 void MCHS_Imitator::GeneratorsOff()
 {
-    WORD* addr  = new WORD[4];
-    WORD* data  = new WORD[4];
+    unsigned int* addr  = new unsigned int[4];
+    unsigned int* data  = new unsigned int[4];
     for(int i =0;i<4;i++){
         addr[i] = 0;
         data[i] = 0;
@@ -59,7 +59,7 @@ void MCHS_Imitator::GeneratorsOff()
     addr[3] = 9225;
     data[3] = 0;
 
-    USB_Write_Data(USB_Device,addr,4,data);
+    USB_Device->write(addr,4,data);
 }
 
 int MCHS_Imitator::getStartAddrOfDownLink(int numOfDownLink)
@@ -93,8 +93,8 @@ bool MCHS_Imitator::CLink_RedirRead(int numOfDownLink, unsigned int CL_Addr, QLi
     if (numOfDownLink > 8) return false;
 
     int size = 62;
-    WORD* addr  = new WORD[size];
-    WORD* data  = new WORD[size];
+    unsigned int* addr  = new unsigned int[size];
+    unsigned int* data  = new unsigned int[size];
     for(int i =0;i<size;i++){
         addr[i] = 0;
         data[i] = 0;
@@ -111,7 +111,7 @@ bool MCHS_Imitator::CLink_RedirRead(int numOfDownLink, unsigned int CL_Addr, QLi
     data[2] = 0;
     addr[3] = startAddr + 11;
     data[3] = 0;
-    USB_Write_Data(USB_Device,addr,4,data);
+    USB_Device->write(addr,4,data);
 
     qDebug()<<"\n"<<"CLink_RedirRead";
     for(int i=0;i<4;i++){
@@ -121,7 +121,7 @@ bool MCHS_Imitator::CLink_RedirRead(int numOfDownLink, unsigned int CL_Addr, QLi
    for(int i=0;i<size;i++){
        addr[i] = startAddrRead + i;
    }
-   USB_Read_Data(USB_Device,addr,size,InData);
+   USB_Device->read(addr,size,InData);
 
    for(int i=0;i<size;i++){
        Data->append(InData[i]);
@@ -136,8 +136,8 @@ bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned int CL_Addr, QL
 {
     if (numOfDownLink > 8) return false;
     int size = 12;
-    WORD* addr  = new WORD[size];
-    WORD* data  = new WORD[size];
+    unsigned int* addr  = new unsigned int[size];
+    unsigned int* data  = new unsigned int[size];
     for(int i =0;i<size;i++){
         addr[i] = 0;
         data[i] = 0;
@@ -169,7 +169,7 @@ bool MCHS_Imitator::CLink_RedirWrite(int numOfDownLink, unsigned int CL_Addr, QL
     for(int i=0;i<size;i++){
         qDebug()<<addr[i]<<"<="<<data[i];
     }
-    USB_Write_Data(USB_Device,addr,size, data);
+    USB_Device->write(addr,size, data);
 
     return true;
     delete[] addr;
@@ -281,12 +281,12 @@ bool MCHS_Imitator::CLink_TxRx(int numOfDownLink, int opcode, QList<unsigned int
 
 void MCHS_Imitator::CLink_sendOpcode(int numOfDownLink, int opcode)
 {
-       WORD *Addr;
-       WORD *Data;
+       unsigned int *Addr;
+       unsigned int *Data;
        int size,i;
        size   = 2;
-       Addr   = new WORD[size];
-       Data   = new WORD[size];
+       Addr   = new unsigned int[size];
+       Data   = new unsigned int[size];
 
        unsigned int DL_startAddr = getStartAddrOfDownLink(numOfDownLink); // Указывает на первую ячейку памяти адресного про-ва выбранного DownLink'a
 
@@ -295,7 +295,7 @@ void MCHS_Imitator::CLink_sendOpcode(int numOfDownLink, int opcode)
        Addr[1] = DL_startAddr+10;
        Data[1] = 1;
 
-       USB_Write_Data(USB_Device, Addr, 2, Data);
+       USB_Device->write(Addr, 2, Data);
        qDebug()<<"CLink_sendOpcode: "<<"DownLink "<<numOfDownLink<<" -> "<<opcode;
 
        delete[] Data;
@@ -308,8 +308,8 @@ bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned int> *Addr
     if (numOfDownLink > 8) return false;
     if (N > 5) return false;
 
-    WORD* addr  = new WORD[12];
-    WORD* data  = new WORD[12];
+    unsigned int* addr  = new unsigned int[12];
+    unsigned int* data  = new unsigned int[12];
     for(int i =0;i<12;i++){
         addr[i] = 0;
         data[i] = 0;
@@ -360,7 +360,7 @@ bool MCHS_Imitator::SendWrite4(int numOfDownLink,int N,QList<unsigned int> *Addr
     for(int i=0;i<12;i++){
         qDebug()<<addr[i]<<"<="<<data[i];
     }
-    USB_Write_Data(USB_Device,addr,12, data);
+    USB_Device->write(addr,12, data);
 
     return true;
     delete[] addr;
@@ -404,9 +404,9 @@ bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned int> *Add
     if (numOfDownLink > 8) return false;
     if (N > 9) return false;
 
-    WORD* addr  = new WORD[12];
-    WORD* data  = new WORD[12];
-    WORD* addrRead = new WORD[62];
+    unsigned int* addr  = new unsigned int[12];
+    unsigned int* data  = new unsigned int[12];
+    unsigned int* addrRead = new unsigned int[62];
 
     for(int i =0;i<12;i++){
         addr[i] = 0;
@@ -461,13 +461,13 @@ bool MCHS_Imitator::SendRead8(int numOfDownLink, int N, QList<unsigned int> *Add
     for(int i=0;i<12;i++){
         qDebug()<<addr[i]<<"<="<<data[i];
     }
-   USB_Write_Data(USB_Device,addr,11,data);
+   USB_Device->write(addr,11,data);
 
    for(int i=0;i<N;i++){
        addrRead[i] = startAddrRead + i;
    }
 
-   USB_Read_Data(USB_Device,addrRead,N,InData);
+   USB_Device->read(addrRead,N,InData);
 
    for(int i=0;i<N;i++){
        Data->append(InData[i]);
@@ -509,8 +509,8 @@ bool MCHS_Imitator::Init_Waiting193(int numOfDownLink)
 {
     if (numOfDownLink > 8) return false;
 
-    WORD* addr  = new WORD[9];
-    WORD* data  = new WORD[9];
+    unsigned int* addr  = new unsigned int[9];
+    unsigned int* data  = new unsigned int[9];
 
     for(int i =0;i<9;i++){
         addr[i] = 0;
@@ -552,7 +552,7 @@ bool MCHS_Imitator::Init_Waiting193(int numOfDownLink)
     for(int i=0;i<9;i++){
         qDebug()<<addr[i]<<"<="<<data[i];
     }
-    USB_Write_Data(USB_Device,addr,9,data);
+    USB_Device->write(addr,9,data);
 }
 
 bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned int> *Data)
@@ -560,7 +560,7 @@ bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned int> 
     if (numOfDownLink > 8) return false;
     int N = 64;
 
-    WORD* addrRead = new WORD[N];
+    unsigned int* addrRead = new unsigned int[N];
 
     unsigned int* InData = new unsigned int[N]; // Массив прочитанных данных
     unsigned int startAddrRead = 0;
@@ -588,7 +588,7 @@ bool MCHS_Imitator::ReadDataFromDownLink(int numOfDownLink, QList<unsigned int> 
        addrRead[i] = startAddrRead + i;
    }
 
-   USB_Read_Data(USB_Device,addrRead,N,InData);
+   USB_Device->read(addrRead,N,InData);
 
    for(int i=0;i<64;i++){
        Data->append(InData[i]);

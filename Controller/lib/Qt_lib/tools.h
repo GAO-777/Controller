@@ -24,8 +24,8 @@
 #include <Windows.h>
 
 // - - - BINP - - - - - - - - - - //
-#include "../../C_lib/Interfaces/ethernet_interface.h"
-#include "../../C_lib/Interfaces/USB_Interface.h"
+#include "lib/Interfaces/ethernet_interface.h"
+#include "lib/Interfaces/USB_Interface.h"
 #include "binp_device.h"
 /*===============================================================================================*\
   ███████████████████████████████████████████████████████████████████████████████████████████████
@@ -36,6 +36,9 @@
   ███████████████████████████─███───█─██─█────██─██───█────█─██─█───█████████████████████████████
   ███████████████████████████████████████████████████████████████████████████████████████████████
 \*===============================================================================================*/
+QList<unsigned int> UnIntToQList(unsigned int* InData, int size);
+unsigned int* QListToUnInt(QList<unsigned int> *InData);
+
 WORD* QListToWord(QList<unsigned int>* InData);
 QList<unsigned int> WordToQList(WORD* InData, int size);
 void printSendData(QString str,QList<unsigned int>* Addr,QList<unsigned int>* Data);
@@ -87,12 +90,13 @@ public:
     explicit Console(QWidget *parent = nullptr);
     void commandHandler(QString commandStr);   // обработчик команд
     void print(QString s, QString type);
+    void print(QString message, QList<unsigned int> *data);
 	void printTable(QList<unsigned int> * Data);
-    void output(QString, QString type);
     void scrollDown();
     void insertPrompt(bool insertNewBlock = true);
     void onEnter();
     void lock(bool lock);
+    void customContextMenuRequest(const QPoint &pos);
 
     QString prompt = "<< ";
     QString userText;
@@ -309,6 +313,8 @@ public:
     Ethernet_Interface* Eth_Device;     // Ethernet соединение
     USB_Interface*      USB_Device;     // USB соединение
     MCHS_Imitator*      MCHS;           // Имитатор МЧС, который будет управять устройством
+
+    QList<unsigned int>* raw_data;
 
     void setConnectionSettings(Connection_Info CI){ ConnectionInfo = CI;}
     bool connectDevice();

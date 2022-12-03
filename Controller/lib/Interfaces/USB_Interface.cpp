@@ -1,29 +1,27 @@
 #include "USB_Interface.h"
-#include <QDebug>
-/* TODO : USB_JTAG */
+
+
 USB_Interface::USB_Interface()
 {
-    DeviceIsDelected = false;
+    device_selected = false;
     FT_Status      = FT_OK;
 }
 
-/* TODO : Get_Status */
 bool USB_Interface::Get_Status()
 {
-     DWORD RxBytes,TxBytes;
-     DWORD EventDWord;
+    DWORD RxBytes,TxBytes;
+    DWORD EventDWord;
 
-     FT_GetStatus(FT_Handle,&RxBytes,&TxBytes,&EventDWord);
-     if (EventDWord & FT_EVENT_MODEM_STATUS) return true;
-     else                                    return false;
+    FT_GetStatus(FT_Handle,&RxBytes,&TxBytes,&EventDWord);
+    if (EventDWord & FT_EVENT_MODEM_STATUS) return true;
+    else                                    return false;
 }
+
 bool USB_Interface::DeviceInfo()
 {
-
     FT_Status = FT_GetDeviceInfo( FT_Handle, &ftDevice, &deviceID, SerialNumber, Description, NULL );
     if (FT_Status == FT_OK) return true;
     else return false;
-
 }
 
 DWORD USB_Interface::DeviceDetail(int Number)
@@ -34,14 +32,13 @@ DWORD USB_Interface::DeviceDetail(int Number)
      return numDevs;
 }
 
-/* TODO : Select_Device */
 void USB_Interface::Select_Device(const char* serial_number)
 {
      memcpy(SerialNumber,serial_number,16);
-     DeviceIsDelected = true;
+     device_selected = true;
 }
 
-/* TODO : Number_Of_Device */
+
 int  USB_Interface::Number_Of_Device()
 {
      unsigned long numDevs=0;
@@ -49,34 +46,33 @@ int  USB_Interface::Number_Of_Device()
      return numDevs;
 }
 
-
-/* TODO : Number_Of_Queue_Data */
-int  USB_Interface::Number_Of_Queue_Data()
+int  USB_Interface::num_bytes_received()
 {
-     unsigned long numData=0;
-     FT_Status=FT_GetQueueStatus(FT_Handle,&numData);
-     return numData;
+    unsigned long BytesReceived = 0;
+    FT_Status = FT_GetQueueStatus(FT_Handle,&BytesReceived);
+    return BytesReceived;
 }
 
-/* TODO : Open_Device */
+
 bool USB_Interface::Open_Device()
 {
-    if( DeviceIsDelected == false){
-        FT_Status=FT_Open(0,&FT_Handle);
-        if(FT_Status!=FT_OK)  return false;
+    if(device_selected == false){
+        FT_Status=FT_Open(0, &FT_Handle);
+        if(FT_Status!=FT_OK)
+            return false;
         FT_SetLatencyTimer(FT_Handle,0x02);
         return true;
     }
     else{
         FT_Status=FT_OpenEx(SerialNumber,FT_OPEN_BY_SERIAL_NUMBER,&FT_Handle);
-        if(FT_Status!=FT_OK)  return false;
+        if(FT_Status!=FT_OK)
+            return false;
         FT_SetLatencyTimer(FT_Handle,0x02);
         return true;
     }
     return false;
 }
 
-/* TODO : Close_Device */
 bool USB_Interface::Close_Device()
 {
      FT_Status=FT_Close(FT_Handle);
@@ -93,20 +89,28 @@ bool USB_Interface::Reset_Device(int sleep)
      if(FT_Status!=FT_OK)  return false;
      return true;
 }
-/* TODO : Write_Data */
-bool USB_Interface::Write_Data(unsigned char* Source, int Size)
+
+unsigned long USB_Interface::send_to_FT(unsigned char* TxBuffer, int BufferSize)
 {
-     FT_Status=FT_Write(FT_Handle, Source,Size,&NumOfWritten);
-     if(FT_Status!=FT_OK)  return false;
-     return true;
+    unsigned long BytesWritten = 0;
+    FT_Status = FT_Write(FT_Handle, TxBuffer, BufferSize, &BytesWritten);
+    if(FT_Status != FT_OK){
+        Error = "Error when transferring to FT";
+        return -1;
+    }
+    return BytesWritten;
 }
 
-/* TODO : Read_Data */
-bool  USB_Interface::Read_Data(unsigned char* Dest, int Size)
+unsigned long USB_Interface::receive_from_FT(unsigned char* RxBuffer, int BufferSize)
 {
-     FT_Status=FT_Read(FT_Handle,Dest,Size,&NumOfRead);
-     if(FT_Status!=FT_OK)  return false;
-     return true;
+    unsigned long BytesReceived = 0;
+    FT_Status = FT_Read(FT_Handle, RxBuffer, BufferSize, &BytesReceived);
+    if(FT_Status != FT_OK){
+        Error = "Error when receiving from FT";
+        return -1;
+    }
+
+    return BytesReceived;
 }
 void  USB_Interface::SetTimeouts(int TxTimeout, int RxTimeout)
 {
@@ -134,10 +138,8 @@ USB_Interface::~USB_Interface()
      Close_Device();
 }
 
-// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
-//                  Функции определенные вне класса
-// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
-int GetDeviceInfoList(FT_STATUS *ftStatus, FT_DEVICE_LIST_INFO_NODE *devInfo){
+
+int USB_Interface::GetDeviceInfoList(FT_STATUS *ftStatus, FT_DEVICE_LIST_INFO_NODE *devInfo){
     DWORD numDevs;
     // create the device information list
     *ftStatus = FT_CreateDeviceInfoList(&numDevs);
@@ -155,114 +157,250 @@ int GetDeviceInfoList(FT_STATUS *ftStatus, FT_DEVICE_LIST_INFO_NODE *devInfo){
 }
 
 
-int USB_Send_Data_Protocol(USB_Interface *USB, WORD ServiceType, WORD *Addr, WORD*Data, int size)
+int USB_Interface::USB_Send_Data_Protocol(unsigned int ServiceType, unsigned int* Addr, unsigned int* Data, int size)
 {
-  DWORD TxBytes=0,Lenght=0;
-  int i,t;
-  BYTE *TxBuffer;
+    unsigned long tx_buffer_size = HEADER_KEY_SYMBOL_NUMBER
+                                    + LENGTH_OF_PACKET_SIZE
+                                    + SERVICE_TYPE_SIZE
+                                    + size * ADDRESS_SIZE
+                                    + size * DATA_SIZE
+                                    + TRAILER_KEY_SYMBOL_NUMBER;
 
-  i = size*2;
-  if(i>1024) i=1024;
-  TxBuffer = new BYTE [1024];
+    unsigned long length_of_packet = tx_buffer_size - HEADER_KEY_SYMBOL_NUMBER;
 
-  TxBytes = 16+size*4+8;       // Total bytes to be transmitted
-  if(TxBytes>1024) return -1;
-  Lenght  = TxBytes-12;     // Bytes number to be checked by hardware
-  // Header bytes does not included in count, while trailer does
+    if(tx_buffer_size > MAX_LENGTH_OF_PACKET){
+        Error = "Packet size exceeded!";
+        return -1;
+    }
 
-// Заполняем  TxBuffer
-  //1. Спец. символ начала посылки
-  for(i=0;i<12;i++)
-    TxBuffer[i] = 0x55;
-  //2. Длина посылки
-  TxBuffer[12] = (BYTE)Lenght;          // LSB
-  TxBuffer[13] = (BYTE)(Lenght>>8);     // MSB
-  //3. Команда
-  TxBuffer[14] = (BYTE)ServiceType;     // LSB
-  TxBuffer[15] = (BYTE)(ServiceType>>8);  // MSB
-  //4. Адрес и данные
-  for(i=0;i<size;i++) //Указываем число слов данных отправляемых по USB
-  { TxBuffer[16+i*4]   = (BYTE)Addr[i];      // адрес ресурса
-    TxBuffer[16+i*4+1] = (BYTE)(Addr[i]>>8); // внутри блока
-    TxBuffer[16+i*4+2] = (BYTE)Data[i];         // данные
-    TxBuffer[16+i*4+3] = (BYTE)(Data[i]>>8);}   // для этого адреса
-  //5. Спец. символ конца посылки
-  for(i=16+size*4;i<16+size*4+8;i++)
-    TxBuffer[i] = 0xAA;
+    BYTE* TxBuffer = new BYTE [tx_buffer_size];
 
-//отправляем данные по USB блок
-  (*USB).Write_Data(TxBuffer,TxBytes);
+    // Заполняем  TxBuffer
+    //1. Спец. символ в начале посылки
+    for(int i=0; i<HEADER_KEY_SYMBOL_NUMBER; i++)
+        TxBuffer[i] = HEADER_KEY_SYMBOL;
+    //2. Длина посылки
+    TxBuffer[LENGTH_POSITION]    = (BYTE) length_of_packet;     // LSB
+    TxBuffer[LENGTH_POSITION +1] = (BYTE)(length_of_packet>>8); // MSB
+    //3. Команда
+    TxBuffer[SERVICE_TYPE_POSITION] =    (BYTE) ServiceType;      // LSB
+    TxBuffer[SERVICE_TYPE_POSITION +1] = (BYTE)(ServiceType>>8);  // MSB
+    //4. Адрес и данные
+    for(int i=0; i<size; i++) //Указываем число слов данных отправляемых по USB
+    {
+        TxBuffer[ADDRESS_POSITION+i*4]    = (BYTE) Addr[i];     // адрес ресурса
+        TxBuffer[ADDRESS_POSITION+i*4 +1] = (BYTE)(Addr[i]>>8); // внутри блока
+        TxBuffer[DATA_POSITION+i*4]       = (BYTE) Data[i];     // данные
+        TxBuffer[DATA_POSITION+i*4 +1]    = (BYTE)(Data[i]>>8); // для этого адреса
+    }
+    //5. Спец. символ конца посылки
+    for(int i=ADDRESS_POSITION+size*4; i<tx_buffer_size; i++)
+        TxBuffer[i] = TRAILER_KEY_SYMBOL;
 
-  delete TxBuffer;
+    //отправляем данные по USB
+    unsigned long BytesWritten = send_to_FT(TxBuffer,tx_buffer_size);
 
-  return TxBytes;
+    raw_data_size = BytesWritten;
+    raw_data = new BYTE[raw_data_size];
+    for(int i=0; i<raw_data_size;i++)
+        raw_data[i] = TxBuffer[i];
+
+    // Проверка, что кол-во отправленных байт равно размеру посылки
+    if(tx_buffer_size != BytesWritten){
+        Error = "The size of the sent packet is not equal to the set size!";
+        return  -1;
+    }
+    delete[] TxBuffer;
+
+    return BytesWritten;
 }
 
-int USB_Recive_Data_Protocol(USB_Interface *USB, BYTE *RxBuffer)
+int USB_Interface::USB_Recive_Data_Protocol(BYTE *RxBuffer, int size)
 {
-   int BytesReceived;
+    int BytesReceived;
 
- // Пороверяем сколько байт доступно на чтение
-   BytesReceived = (*USB).Number_Of_Queue_Data();
+    // Пороверяем сколько байт доступно на чтение
+    BytesReceived = num_bytes_received();
 
-   if(BytesReceived>0)
-   {   if(BytesReceived>1024) BytesReceived=1024;
-       (*USB).Read_Data(RxBuffer,BytesReceived);
-       return BytesReceived; }
-   else return -1;
-}
-int USB_Read_Data(USB_Interface *USB, WORD *a, int size, unsigned int *Data)
-{
-    WORD ServiceType;
-    WORD *Addr;
-
-    int TxBytes,RxBytes,i,n;
-    BYTE *RxData;
-
-    Addr   = a;
-    RxData = new BYTE[16+size*4+8];
-
-    // выбор типа сервиса (чтение)
-    ServiceType = 0xABCD;
-
-    TxBytes = USB_Send_Data_Protocol(USB, ServiceType, Addr, Addr, size);
-    ::Sleep(10);
-    RxBytes = USB_Recive_Data_Protocol(USB, RxData);
-
-    /*int size_test = 16+size*4+8;
-     unsigned int* Test_Data = new unsigned int[size_test];
-     for(i=0;i<size_test;i++){
-         printf("%d",(WORD)RxData[i]);
-         Test_Data[i] = (WORD)RxData[i];
-     }
-   // printf("\n");*/
-
-    //Вывод данных
-    if(RxBytes>0)
-      for(i=0;i<size;i++)
-      {  Data[i] = (WORD)RxData[16+i*4+2] + (WORD)(RxData[16+i*4+3]<<8);}
-
-    return RxBytes;
+    if(BytesReceived == size){ // Принято столько сколько ожидалось
+        receive_from_FT(RxBuffer,BytesReceived);
+        return BytesReceived;
+    }
+    else{ // Принято меньше или больше чем ожидалось
+        RxBuffer = new BYTE[BytesReceived]; // пересоздаем буффер под необходимый размер
+        receive_from_FT(RxBuffer,BytesReceived);
+        return BytesReceived;
+    }
 }
 
-int USB_Write_Data(USB_Interface *USB, WORD *a, int size, WORD *Data)
+int USB_Interface::read(unsigned int *addres_array, int size, unsigned int *data_array)
 {
-    WORD ServiceType;
-    WORD *Addr;
-    int TxBytes,RxBytes;
-    BYTE *RxData;
+    unsigned long rx_buffer_size = HEADER_KEY_SYMBOL_NUMBER
+                                    + LENGTH_OF_PACKET_SIZE
+                                    + SERVICE_TYPE_SIZE
+                                    + size * ADDRESS_SIZE
+                                    + size * DATA_SIZE
+                                    + TRAILER_KEY_SYMBOL_NUMBER;
 
-    Addr   = a;
-    RxData = new BYTE[16+size*4+8];
+    int BytesWritten = USB_Send_Data_Protocol(SERVICE_TYPE_READ, addres_array, addres_array, size);
+    if(BytesWritten < 0)
+        return -1;
 
-    // выбор типа сервиса (запись)
-    ServiceType = 0xCDAB;
+    int timer = 0;
+    bool timeout_flag = false;
+    bool package_received = false;
+    int num_bytes = -1;
 
-    TxBytes = USB_Send_Data_Protocol(USB, ServiceType, Addr, Data, size);
-    ::Sleep(10);
-    RxBytes = USB_Recive_Data_Protocol(USB, RxData);
+    while( !(package_received | timeout_flag)){
+        if(num_bytes_received() > num_bytes)
+            num_bytes = num_bytes_received();
+        else package_received = true;
 
-    delete[] RxData;
+        if(timer >= RESPONSE_TIME)
+            timeout_flag = true;
+        Sleep(1);
+        timer++;
+    }
 
-    return TxBytes;
+    // Не дождались ответа
+    if(timeout_flag & !package_received){
+        Error = "Timeout exceeded!";
+        return -1;
+    }
+
+    BYTE* RxBuffer = new BYTE [rx_buffer_size];
+    int BytesRead = USB_Recive_Data_Protocol(RxBuffer, rx_buffer_size);
+
+    raw_data_size = BytesRead;
+    raw_data = new BYTE[raw_data_size];
+    for(int i=0; i<raw_data_size;i++)
+        raw_data[i] = RxBuffer[i];
+
+    // Кол-во принятых байт не равно кол-ву отправленных
+    if(BytesRead != BytesWritten){
+        Error = "The number of bytes received is not equal to the number of bytes sent!";
+        return -2;
+    }
+
+    unsigned int length_of_received_package = 0;
+    length_of_received_package = ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+1]<<8) & 0xFF00)
+            | (RxBuffer[HEADER_KEY_SYMBOL_NUMBER] & 0x00FF);
+
+    // Проверка на соответствие длины посылки
+    if(length_of_received_package != (BytesWritten-HEADER_KEY_SYMBOL_NUMBER)){
+        Error = "The length of the received package is incorrect!";
+        return -3;
+    }
+
+    // Проверка на соответствие команды
+    unsigned int service_Type_of_received_package = 0;
+    service_Type_of_received_package = ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+3]<<8) & 0xFF00)
+            | ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+2]) & 0x00FF);
+
+    if(service_Type_of_received_package != SERVICE_TYPE_READ){
+        Error = "Service Type is not equal to sent!";
+        return -4;
+    }
+
+    unsigned int data_received_size = BytesRead
+            - HEADER_KEY_SYMBOL_NUMBER
+            - LENGTH_OF_PACKET_SIZE
+            - SERVICE_TYPE_SIZE
+            - TRAILER_KEY_SYMBOL_NUMBER;
+
+    // Кол-во пришедших данных больше чем отправленных
+    if(data_received_size/4 != size){
+        Error = "The length of the received package is incorrect!";
+        return -5;
+    }
+
+    unsigned int *addr_array = new unsigned int[size];
+    for(int i=0; i<size; i++){
+        addr_array[i] = ((RxBuffer[ADDRESS_POSITION+(i*4)+1]<<8) & 0xFF00)
+                | ((RxBuffer[ADDRESS_POSITION+(i*4)]) & 0x00FF);
+
+        data_array[i] = ((RxBuffer[DATA_POSITION+(i*4)+1]<<8) & 0xFF00)
+                | ((RxBuffer[DATA_POSITION+(i*4)]) & 0x00FF);
+    }
+
+    return BytesRead;
+}
+
+int USB_Interface::write(unsigned int *Addr, int size, unsigned int *Data)
+{
+
+    int BytesWritten = USB_Send_Data_Protocol(SERVICE_TYPE_WRITE, Addr, Data, size);
+    if(BytesWritten < 0)
+        return -1;
+
+    unsigned long rx_buffer_size = HEADER_KEY_SYMBOL_NUMBER
+            + LENGTH_OF_PACKET_SIZE
+            + SERVICE_TYPE_SIZE
+            + size * ADDRESS_SIZE
+            + size * DATA_SIZE
+            + TRAILER_KEY_SYMBOL_NUMBER;
+
+    int timer = 0;
+    bool timeout_flag = false;
+    bool package_received = false;
+    int num_bytes = -1;
+
+    while( !(package_received | timeout_flag)){
+        if(num_bytes_received() > num_bytes)
+            num_bytes = num_bytes_received();
+        else package_received = true;
+
+        if(timer >= RESPONSE_TIME)
+            timeout_flag = true;
+        Sleep(1);
+        timer++;
+    }
+
+    // Не дождались ответа
+    if(timeout_flag & !package_received){
+         Error = "Timeout exceeded!";
+        return -1;
+    }
+
+    BYTE* RxBuffer = new BYTE [rx_buffer_size];
+    int BytesRead = USB_Recive_Data_Protocol(RxBuffer, rx_buffer_size);
+
+    // Кол-во принятых байт не равно кол-ву отправленных
+    if(BytesRead != BytesWritten){
+        Error = "The number of bytes received is not equal to the number of bytes sent!";
+        return -2;
+    }
+
+    unsigned int length_of_received_package = 0;
+    length_of_received_package = ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+1]<<8) & 0xFF00)
+            | (RxBuffer[HEADER_KEY_SYMBOL_NUMBER] & 0x00FF);
+
+    // Проверка на соответствие длины посылки
+    if(length_of_received_package != (BytesWritten-HEADER_KEY_SYMBOL_NUMBER)){
+        Error = "The length of the received package is incorrect!";
+        return -3;
+    }
+    // Проверка на соответствие команды
+    unsigned int service_Type_of_received_package = 0;
+    service_Type_of_received_package = ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+3]<<8) & 0xFF00)
+            | ((RxBuffer[HEADER_KEY_SYMBOL_NUMBER+2]) & 0x00FF);
+
+    if(service_Type_of_received_package != SERVICE_TYPE_WRITE){
+        Error = "Service Type is not equal to sent!";
+        return -4;
+    }
+
+    unsigned int data_received_size = BytesRead
+                                        - HEADER_KEY_SYMBOL_NUMBER
+                                        - LENGTH_OF_PACKET_SIZE
+                                        - SERVICE_TYPE_SIZE
+                                        - TRAILER_KEY_SYMBOL_NUMBER;
+
+    // Кол-во пришедших данных больше чем отправленных
+    if(data_received_size/4 != size){
+        Error = "The length of the received package is incorrect!";
+        return -5;
+    }
+
+    return BytesWritten;
 }

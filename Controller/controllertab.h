@@ -31,6 +31,7 @@ public:
     void read();
 
     void dataReceived();
+    void customContextMenuRequest(const QPoint &pos);
 
 private slots:
 
