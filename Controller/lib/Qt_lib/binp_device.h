@@ -2,8 +2,8 @@
 #define BINP_DEVICE_H
 
 #include <Windows.h>
-#include "../../C_lib/Interfaces/USB_Interface.h"
-#include "../../C_lib/Interfaces/FTDI_Drv/ftd2xx.h"
+#include "lib/Interfaces/USB_Interface.h"
+#include "lib/Interfaces/FTDI_Drv/ftd2xx.h"
 
 #include<QString>
 #include<QList>
