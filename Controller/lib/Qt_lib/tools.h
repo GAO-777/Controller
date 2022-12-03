@@ -88,7 +88,7 @@ signals:
 
 public:
     explicit Console(QWidget *parent = nullptr);
-    void commandHandler(QString commandStr);   // обработчик команд
+    bool commandHandler(QString commandStr);   // обработчик команд
     void print(QString s, QString type);
     void print(QString message, QList<unsigned int> *data);
 	void printTable(QList<unsigned int> * Data);

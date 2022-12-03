@@ -176,12 +176,17 @@ Console::Console(QWidget *parent) :
     isLocked = false;
 }
 
-void Console::commandHandler(QString commandStr)
+bool Console::commandHandler(QString commandStr)
 {
     QStringList commandArray = commandStr.split(" ");
 
-    if(commandArray[0] == "clear") clear();
+    if(commandArray[0] == "clear"){
+        clear();
+        insertPrompt(true);
+    }
+    else return false;
 
+    return true;
 }
 
 void Console::printTable(QList<unsigned int> *Data)
@@ -255,8 +260,11 @@ void Console::onEnter()
     QString cmd = textCursor().block().text().mid(prompt.length());
 
     //isLocked = true;
-    historyAdd(cmd);
-    commandHandler(cmd);
+    if(commandHandler(cmd))
+        historyAdd(cmd);
+    else
+        print("Unknown command","e");
+
 }
 
 void Console::lock(bool lock)
