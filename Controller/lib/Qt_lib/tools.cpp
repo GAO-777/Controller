@@ -1345,6 +1345,9 @@ bool ConnectionManager::read(QList<unsigned int> *Addr, QList<unsigned int> *Dat
         }
         else{
             Message = USB_Device->Error.c_str();
+            raw_data->clear();
+            for(int i=0;i<USB_Device->raw_data_size;i++)
+                raw_data->append(USB_Device->raw_data[i]);
             return false;
         }
     }
